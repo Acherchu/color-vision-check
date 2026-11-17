@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Color Vision Check</title>
+<meta name="description" content="A free colorblind test: dot plates plus a color arrangement test. Takes about 5 minutes.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<style>
+/* Layout: one centred column on a fixed neutral grey - colour tests need a neutral surround, so this
+   page is deliberately one theme (a mid-dark grey with no colour cast) in both light and dark mode. */
+:root{
+  --bg:#2b2b2b;          /* neutral surround (equal R=G=B on purpose) */
+  --panel:#353535;
+  --line:#4a4a4a;
+  --fg:#ececec;
+  --muted:#a8a8a8;
+  --accent:#e8e8e8;      /* no coloured accent: nothing on screen should tint what you see */
+  --ok:#9bd3a6; --bad:#f0a08f;
+  --display:"Space Grotesk",system-ui,sans-serif;
+  --body:"Atkinson Hyperlegible",system-ui,"Segoe UI",sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--fg)}
+body{margin:0;font:17px/1.5 var(--body);padding-block:28px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+main{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+h1,h2{font-family:var(--display);font-weight:700;letter-spacing:-.01em;text-wrap:balance;margin:0}
+h1{font-size:clamp(30px,6vw,44px)}
+h2{font-size:24px}
+p{margin:0;max-width:62ch}
+.muted{color:var(--muted)}
+.eyebrow{font-family:var(--display);font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:14px}
+ul.check{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
+label{font-weight:700}
+input[type=text]{font:inherit;color:var(--fg);background:#232323;border:1px solid var(--line);border-radius:8px;padding:12px 14px;width:100%;max-width:360px}
+input[type=text]:focus-visible,button:focus-visible{outline:3px solid #ffffff;outline-offset:2px}
+button{font:inherit;font-weight:700;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:#404040;color:var(--fg);padding:12px 18px;min-height:48px}
+button:hover{background:#4a4a4a}
+button.primary{background:var(--accent);color:#1b1b1b;border-color:var(--accent)}
+button.primary:hover{background:#ffffff}
+button:disabled{opacity:.4;cursor:default}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.progress{height:6px;background:#3e3e3e;border-radius:3px;overflow:hidden}
+.progress>i{display:block;height:100%;background:#d8d8d8;width:0;transition:width .3s}
+
+/* plates */
+.plate-wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,260px);gap:22px;align-items:start}
+@media (max-width:640px){.plate-wrap{grid-template-columns:minmax(0,1fr)}}
+canvas.plate{width:100%;max-width:420px;aspect-ratio:1;border-radius:50%;display:block;margin:0 auto;background:#202020}
+.answer{font-family:var(--display);font-size:44px;font-variant-numeric:tabular-nums;text-align:center;min-height:62px;letter-spacing:.08em;background:#232323;border:1px solid var(--line);border-radius:10px;padding:4px}
+.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.pad button{font-size:22px;padding:10px 0}
+
+/* arrangement */
+.caps{display:flex;flex-wrap:wrap;gap:10px}
+.cap{width:52px;height:52px;border-radius:50%;border:2px solid #1e1e1e;padding:0;min-height:0;box-shadow:0 1px 0 #555 inset}
+.cap.pilot{outline:2px dashed #9a9a9a;outline-offset:3px;cursor:default}
+.cap.used{visibility:hidden}
+.lineup{display:flex;flex-wrap:wrap;gap:10px;min-height:66px;padding:6px;border:1px dashed var(--line);border-radius:12px;background:#262626}
+.lineup .cap{cursor:default}
+
+/* results */
+.verdict{font-family:var(--display);font-size:30px;line-height:1.15}
+table{border-collapse:collapse;font-variant-numeric:tabular-nums}
+th,td{text-align:left;padding:6px 14px 6px 0;vertical-align:top}
+th{color:var(--muted);font-weight:400}
+.marks span{display:inline-block;width:24px;font-weight:700}
+.y{color:var(--ok)}.n{color:var(--bad)}
+.status{padding:10px 14px;border-radius:8px;background:#232323;border:1px solid var(--line)}
+@media (prefers-reduced-motion:reduce){.progress>i{transition:none}}
+[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<main>
+
+<!-- START -->
+<section id="start" class="panel">
+  <span class="eyebrow">About 5 minutes</span>
+  <h1>Color Vision Check</h1>
+  <p>Two short tests show whether you see colors the usual way, and if not, which kind of colorblindness you have and how strong it is. Your results are sent to Archer when you finish.</p>
+  <p class="muted"><b>Part 1</b> is 11 circles of dots with a number hidden in each. <b>Part 2</b> asks you to line up colored circles in order, twice.</p>
+  <div class="panel" style="background:#2f2f2f">
+    <b>Before you start, for a fair result:</b>
+    <ul class="check">
+      <li>Turn <b>off</b> Night Light / Night Shift / any blue-light filter or "warm" screen mode.</li>
+      <li>Turn the screen brightness up, and don't wear tinted glasses.</li>
+      <li>Use a normal room light, not total darkness or bright sun on the screen.</li>
+    </ul>
+  </div>
+  <label for="name">Your name</label>
+  <input type="text" id="name" maxlength="30" autocomplete="nickname" placeholder="So Archer knows who took it">
+  <div class="row"><button class="primary" id="go">Start the test</button><span class="muted" id="nameWarn" hidden>Type your name first.</span></div>
+</section>
+
+<!-- PART 1: plates -->
+<section id="plates" class="panel" hidden>
+  <div class="row" style="justify-content:space-between"><span class="eyebrow">Part 1 of 2 &middot; dot circles</span><span class="eyebrow" id="plateCount"></span></div>
+  <div class="progress"><i id="plateBar"></i></div>
+  <div class="plate-wrap">
+    <canvas class="plate" id="plateCanvas" width="840" height="840" aria-label="Circle of colored dots with a hidden number"></canvas>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <p>What number do you see in the circle? Look at the <b>shape</b> the dots make, not how bright they are. Don't stare longer than about 5 seconds.</p>
+      <div class="answer" id="answer" aria-live="polite"></div>
+      <div class="pad" id="pad"></div>
+      <button class="primary" id="plateOk" disabled>Next</button>
+      <button id="plateNone">I can't see a number</button>
+    </div>
+  </div>
+</section>
+
+<!-- PART 2: arrangement -->
+<section id="arrange" class="panel" hidden>
+  <div class="row" style="justify-content:space-between"><span class="eyebrow">Part 2 of 2 &middot; <span id="roundName">color order</span></span><span class="eyebrow" id="roundCount"></span></div>
+  <h2>Line the colors up in order</h2>
+  <p>The line starts with the circle on the left (it's already placed). Tap the circle from the pile below that looks <b>closest in color</b> to the last one in the line, and keep going until the pile is empty. Go with your first impression.</p>
+  <div class="lineup" id="lineup"></div>
+  <div class="caps" id="pile"></div>
+  <div class="row"><button id="undo">Undo last</button><button class="primary" id="arrangeOk" disabled>Done</button></div>
+</section>
+
+<!-- RESULTS -->
+<section id="results" class="panel" hidden>
+  <span class="eyebrow">Your result</span>
+  <div class="verdict" id="verdict"></div>
+  <p id="explain"></p>
+  <div class="status" id="sendStatus">Sending your results to Archer...</div>
+  <table id="detail"></table>
+  <p class="muted">This is a screen test, so it's a good guide but not a diagnosis: screens show colors a little differently. An eye doctor can do the exact test.</p>
+  <div class="row"><button id="again">Take it again</button><button id="copy" hidden>Copy results</button></div>
+</section>
+
+</main>
+<script>
+"use strict";
+// ======================= colour maths =======================
+// linear sRGB <-> LMS cones (Vienot, Brettel & Mollon 1999) and dichromat simulation
+const RGB2LMS=[[17.8824,43.5161,4.11935],[3.45565,27.1554,3.86714],[0.0299566,0.184309,1.46709]];
+const LMS2RGB=[[0.0809444479,-0.130504409,0.116721066],[-0.0102485335,0.0540193266,-0.113614708],[-0.000365296938,-0.00412161469,0.693511405]];
+const SIM={protan:[[0,2.02344,-2.52581],[0,1,0],[0,0,1]],deutan:[[1,0,0],[0.494207,0,1.24827],[0,0,1]],tritan:[[1,0,0],[0,1,0],[-0.395913,0.801109,0]]};
+const mv=(m,v)=>[m[0][0]*v[0]+m[0][1]*v[1]+m[0][2]*v[2],m[1][0]*v[0]+m[1][1]*v[1]+m[1][2]*v[2],m[2][0]*v[0]+m[2][1]*v[1]+m[2][2]*v[2]];
+const toGamma=x=>{x=Math.min(1,Math.max(0,x));return x<=0.0031308?12.92*x:1.055*Math.pow(x,1/2.4)-0.055};
+const css=lin=>"rgb("+lin.map(x=>Math.round(toGamma(x)*255)).join(",")+")";
+
+// CIE L*u*v* (D65) -> linear sRGB
+const UN=0.19783, VN=0.46832;
+function luvToLin(L,u,v){
+  const Y=L>8?Math.pow((L+16)/116,3):L/903.3;
+  const up=u/(13*L)+UN, vp=v/(13*L)+VN;
+  const X=Y*9*up/(4*vp), Z=Y*(12-3*up-20*vp)/(4*vp);
+  return [3.2404542*X-1.5371385*Y-0.4985314*Z,-0.9692660*X+1.8760108*Y+0.0415560*Z,0.0556434*X-0.2040259*Y+1.0572252*Z];
+}
+function linToLuv(c){
+  const X=0.4124564*c[0]+0.3575761*c[1]+0.1804375*c[2],Y=0.2126729*c[0]+0.7151522*c[1]+0.0721750*c[2],Z=0.0193339*c[0]+0.1191920*c[1]+0.9503041*c[2];
+  const d=X+15*Y+3*Z; if(d<=0) return [0,0,0];
+  const up=4*X/d, vp=9*Y/d, L=Y>0.008856?116*Math.cbrt(Y)-16:903.3*Y;
+  return [L,13*L*(up-UN),13*L*(vp-VN)];
+}
+
+// ======================= part 1: plates =======================
+// Each plate hides a number drawn in colours that differ ONLY in what one kind of cone picks up
+// (red L, green M or blue S) - with every dot's brightness scrambled, so brightness gives nothing away.
+// Someone missing (or weak in) that cone can't find the number; everyone else can.
+const DIGITS=["01110100011001110101110011000101110","00100011000010000100001000010001110","01110100010000100010001000100011111","11111000100010000010000011000101110","00010001100101010010111110001000010","11111100001111000001000011000101110","00110010001000011110100011000101110","11111000010001000100010000100001000","01110100011000101110100011000101110","01110100011000101111000010001001100"];
+function inDigits(n,u,v){
+  const w=0.26,h=0.46,gap=0.06,x0=0.5-w-gap/2,y0=0.5-h/2,ds=[Math.floor(n/10),n%10];
+  for(let k=0;k<2;k++){
+    const dx=x0+k*(w+gap); if(u<dx||u>=dx+w||v<y0||v>=y0+h) continue;
+    const col=Math.floor((u-dx)/w*5), row=Math.floor((v-y0)/h*7);
+    if(col>=0&&col<=4&&row>=0&&row<=6&&DIGITS[ds[k]][row*5+col]==="1") return true;
+  }
+  return false;
+}
+function coneDir(type){ const c=type==="protan"?0:type==="deutan"?1:2; const d=[LMS2RGB[0][c],LMS2RGB[1][c],LMS2RGB[2][c]]; const m=Math.max(...d.map(Math.abs)); return d.map(x=>x/m); }
+function rng(seed){ let s=seed>>>0||1; return()=>{ s^=s<<13; s>>>=0; s^=s>>17; s^=s<<5; s>>>=0; return s/4294967296; }; }
+
+function drawPlate(cv,plate){
+  const S=cv.width, ctx=cv.getContext("2d"), R=rng(plate.seed);
+  ctx.fillStyle="#202020"; ctx.fillRect(0,0,S,S);
+  const base=plate.type==="tritan"?[0.30,0.30,0.18]:[0.28,0.27,0.20];
+  const d=plate.type==="control"?[0,0,0]:coneDir(plate.type).map(x=>x*plate.amount);
+  const rad=S*0.48, cx=S/2, cy=S/2, scale=S/380, taken=[];
+  const grid=new Map(), cell=24*scale, key=(i,j)=>i+","+j;
+  for(let tries=0;tries<12000&&taken.length<950;tries++){
+    const r=(3.5+7*R()*R())*scale, a=R()*Math.PI*2, dist=Math.sqrt(R())*(rad-r);
+    const x=cx+Math.cos(a)*dist, y=cy+Math.sin(a)*dist, gi=Math.floor(x/cell), gj=Math.floor(y/cell);
+    let clash=false;
+    for(let i=gi-1;i<=gi+1&&!clash;i++) for(let j=gj-1;j<=gj+1&&!clash;j++){
+      for(const t of grid.get(key(i,j))||[]){ const rr=t[2]+r+1.2*scale; if((t[0]-x)**2+(t[1]-y)**2<rr*rr){clash=true;break;} }
+    }
+    if(clash) continue;
+    const dot=[x,y,r]; taken.push(dot); const k=key(gi,gj); if(!grid.has(k)) grid.set(k,[]); grid.get(k).push(dot);
+    const fig=inDigits(plate.number,x/S,y/S);
+    let lin;
+    if(plate.type==="control") lin=fig?[0.55,0.32,0.08]:[0.10,0.16,0.12];
+    else lin=base.map((b,i)=>b+(fig?d[i]:-d[i]));
+    const bright=0.62+0.6*R();
+    lin=lin.map(x=>x*bright+(R()-0.5)*0.012);
+    ctx.fillStyle=css(lin); ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+  }
+}
+
+// ======================= part 2: arrangement (D-15 style) =======================
+// 16 caps (1 fixed + 15 to place) evenly round the hue circle in CIE L*u*v*, in the same
+// blue -> green -> yellow -> red -> purple order as the Farnsworth D-15. Scored with the
+// Vingrys & King-Smith (1988) moment method: the angle of the main confusion axis says which kind,
+// the C-index (1 = perfect) says how strong.
+const N_CAPS=16;
+function makeCaps(chroma){
+  const caps=[];
+  for(let i=0;i<N_CAPS;i++){
+    const h=(255-i*(320/(N_CAPS-1)))*Math.PI/180;
+    const u=chroma*Math.cos(h), v=chroma*Math.sin(h), lin=luvToLin(58,u,v);
+    caps.push({i,u,v,lin,css:css(lin)});
+  }
+  return caps;
+}
+function vks(order,caps){
+  let su=0,sv=0,suv=0;
+  for(let k=1;k<order.length;k++){ const a=caps[order[k-1]],b=caps[order[k]]; const du=b.u-a.u,dv=b.v-a.v; su+=du*du; sv+=dv*dv; suv+=du*dv; }
+  const tr=su+sv, det=su*sv-suv*suv, disc=Math.sqrt(Math.max(0,tr*tr/4-det));
+  const l1=tr/2+disc, l2=Math.max(1e-9,tr/2-disc), n=order.length-1;
+  let ang=Math.atan2(l1-su,suv)*180/Math.PI;           // direction of the major axis
+  if(Math.abs(suv)<1e-9) ang=su>=sv?0:90;
+  while(ang>90) ang-=180; while(ang<=-90) ang+=180;
+  return {ang, major:Math.sqrt(l1/n), minor:Math.sqrt(l2/n)};
+}
+// what a person with each kind of colorblindness would do: pick the closest-LOOKING cap each time
+function dichromatOrder(caps,type){
+  const seen=caps.map(c=>linToLuv(mv(LMS2RGB,mv(SIM[type],mv(RGB2LMS,c.lin)))));
+  const left=new Set(caps.map(c=>c.i).slice(1)), order=[0];
+  while(left.size){ const last=seen[order[order.length-1]]; let best=null,bd=1e9;
+    for(const j of left){ const s=seen[j], d=(s[1]-last[1])**2+(s[2]-last[2])**2+(s[0]-last[0])**2; if(d<bd){bd=d;best=j;} }
+    order.push(best); left.delete(best); }
+  return order;
+}
+function scoreArrangement(order,caps){
+  const perfect=vks([...Array(N_CAPS).keys()],caps), got=vks(order,caps);
+  const c=got.major/perfect.major, s=(got.major/got.minor)/(perfect.major/perfect.minor);
+  // reference angles for this cap set, from simulated dichromats
+  let type="normal", bestDiff=999, refs={};
+  for(const t of ["protan","deutan","tritan"]){ refs[t]=vks(dichromatOrder(caps,t),caps).ang; }
+  if(c>1.6){
+    for(const t in refs){ let d=Math.abs(got.ang-refs[t])%180; d=Math.min(d,180-d); if(d<bestDiff){bestDiff=d;type=t;} }
+    if(bestDiff>30) type="unclear";
+  }
+  let crossings=0; for(let k=1;k<order.length;k++) if(Math.abs(order[k]-order[k-1])>2) crossings++;
+  return {type, angle:+got.ang.toFixed(1), c:+c.toFixed(2), s:+s.toFixed(2), crossings, order:order.slice(1), refs:Object.fromEntries(Object.entries(refs).map(([k,v])=>[k,+v.toFixed(1)]))};
+}
+
+// ======================= the test flow =======================
+const $=id=>document.getElementById(id);
+const show=id=>{ for(const s of ["start","plates","arrange","results"]) $(s).hidden=s!==id; window.scrollTo(0,0); };
+let plates=[], plateIdx=0, typed="", answers=[], rounds=[], roundIdx=0, order=[], caps=[], result=null, testName="";
+
+function buildPlates(){
+  const R=rng(Date.now()&0xffffffff);
+  const num=()=>{ let n; do n=12+Math.floor(R()*86); while(n%10===0||Math.floor(n/10)===n%10); return n; };
+  const rgAmt=[0.14,0.095,0.065], trAmt=[0.22,0.15,0.11], lv=["strong","medium","faint"];
+  const list=[];
+  for(const t of ["protan","deutan","tritan"]) for(let k=0;k<3;k++) list.push({type:t,level:lv[k],weight:3-k,amount:(t==="tritan"?trAmt:rgAmt)[k]});
+  for(let i=list.length-1;i>0;i--){ const j=Math.floor(R()*(i+1)); [list[i],list[j]]=[list[j],list[i]]; }
+  list.unshift({type:"control",level:"easy",weight:0,amount:0});
+  list.splice(6,0,{type:"control",level:"easy",weight:0,amount:0});
+  for(const p of list){ p.number=num(); p.seed=Math.floor(R()*4e9)+1; }
+  return list;
+}
+function showPlate(){
+  const p=plates[plateIdx]; typed="";
+  $("answer").textContent=""; $("plateOk").disabled=true;
+  $("plateCount").textContent=(plateIdx+1)+" of "+plates.length;
+  $("plateBar").style.width=(plateIdx/plates.length*100)+"%";
+  const cv=$("plateCanvas"); drawPlate(cv,p);
+}
+function answerPlate(txt){
+  const p=plates[plateIdx]; answers.push({type:p.type,level:p.level,weight:p.weight,shown:p.number,said:txt,ok:parseInt(txt,10)===p.number});
+  plateIdx++;
+  if(plateIdx<plates.length) showPlate(); else startArrange();
+}
+
+function startArrange(){
+  rounds=[{name:"color order",key:"d15",chroma:34},{name:"pale color order",key:"d15ds",chroma:16}];
+  roundIdx=0; result={}; showRound(); show("arrange");
+}
+function showRound(){
+  const r=rounds[roundIdx]; caps=makeCaps(r.chroma); order=[0];
+  $("roundName").textContent=r.name; $("roundCount").textContent="round "+(roundIdx+1)+" of "+rounds.length;
+  const pile=[...Array(N_CAPS-1).keys()].map(i=>i+1);
+  for(let i=pile.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [pile[i],pile[j]]=[pile[j],pile[i]]; }
+  $("pile").innerHTML="";
+  for(const i of pile){ const b=document.createElement("button"); b.className="cap"; b.style.background=caps[i].css; b.dataset.i=i; b.setAttribute("aria-label","color circle");
+    b.onclick=()=>{ if(b.classList.contains("used")) return; order.push(i); b.classList.add("used"); drawLine(); }; $("pile").appendChild(b); }
+  drawLine();
+}
+function drawLine(){
+  const L=$("lineup"); L.innerHTML="";
+  order.forEach((i,k)=>{ const d=document.createElement("span"); d.className="cap"+(k===0?" pilot":""); d.style.background=caps[i].css; d.style.display="inline-block"; L.appendChild(d); });
+  $("arrangeOk").disabled=order.length<N_CAPS; $("undo").disabled=order.length<=1;
+}
+$("undo").onclick=()=>{ if(order.length<=1) return; const i=order.pop(); const b=$("pile").querySelector('[data-i="'+i+'"]'); if(b) b.classList.remove("used"); drawLine(); };
+$("arrangeOk").onclick=()=>{
+  const r=rounds[roundIdx]; result[r.key]=scoreArrangement(order,caps);
+  roundIdx++; if(roundIdx<rounds.length) showRound(); else finish();
+};
+
+function finish(){
+  const plateRes={control:[],protan:[],deutan:[],tritan:[]}; let missRG=0, missTR=0, missRGstrong=false, missTRstrong=false, controlMiss=0;
+  for(const a of answers){ plateRes[a.type].push(a.ok);
+    if(a.ok) continue;
+    if(a.type==="control") controlMiss++;
+    else if(a.type==="tritan"){ missTR+=a.weight; if(a.level==="strong") missTRstrong=true; }
+    else { missRG+=a.weight; if(a.level==="strong") missRGstrong=true; } }
+  const d1=result.d15, d2=result.d15ds;
+  const arrType=(d1.type!=="normal"&&d1.type!=="unclear")?d1.type:(d2.type!=="normal"&&d2.type!=="unclear")?d2.type:"normal";
+  let type="normal", severity="", why="";
+  if(controlMiss>=2){ type="unclear"; why="You missed the easy circles that everyone can read, so this result can't be trusted. Try again and type the number you see in each circle."; }
+  else if(missTR>missRG && (missTR>=3 || arrType==="tritan")){
+    type="tritan"; severity=missTRstrong||d1.type==="tritan"?"strong":missTR>=3?"moderate":"mild";
+  } else if(missRG>=2 || arrType==="protan" || arrType==="deutan"){
+    type=(arrType==="protan"||arrType==="deutan")?arrType:"redgreen";
+    severity=(missRGstrong||d1.type===type)?"strong":(missRG>=4||d2.type===type)?"moderate":"mild";
+  } else if(arrType==="tritan"){ type="tritan"; severity="mild"; }
+  const words={normal:"Normal color vision",protan:"Protan: red-weak",deutan:"Deutan: green-weak",tritan:"Tritan: blue-weak",redgreen:"Red-green colorblind",unclear:"Unclear result"};
+  const explain={
+    normal:"You found the hidden numbers and lined the colors up in order. Your color vision looks normal.",
+    protan:"Your eyes pick up red light weakly. Reds look darker than they do to most people, and red, green, orange and brown can look alike.",
+    deutan:"Your eyes pick up green light weakly. This is the most common kind. Red, green, orange and brown can look alike, and so can blue and purple.",
+    tritan:"Your eyes pick up blue light weakly. This kind is rare. Blue and green can look alike, and so can yellow and pink.",
+    redgreen:"You missed the red-green circles, but the color line-up didn't show clearly whether it's the red-weak or green-weak kind. Green-weak is far more common.",
+    unclear:why};
+  const sevWord={strong:"Strong",moderate:"Moderate",mild:"Mild"};
+  const summary=type==="normal"?"Normal":(sevWord[severity]?sevWord[severity]+" ":"")+words[type];
+  $("verdict").textContent=type==="normal"||type==="unclear"?words[type]:(sevWord[severity]+" "+words[type].charAt(0).toLowerCase()+words[type].slice(1));
+  $("explain").textContent=explain[type]+(severity==="mild"?" It's mild: most colors still look normal to you.":"");
+  const marks=arr=>arr.map(x=>'<span class="'+(x?"y":"n")+'">'+(x?"✓":"✗")+"</span>").join("");
+  $("detail").innerHTML=
+    "<tr><th>Easy circles</th><td class='marks'>"+marks(plateRes.control)+"</td></tr>"+
+    "<tr><th>Red-weak circles</th><td class='marks'>"+marks(plateRes.protan)+"</td></tr>"+
+    "<tr><th>Green-weak circles</th><td class='marks'>"+marks(plateRes.deutan)+"</td></tr>"+
+    "<tr><th>Blue-weak circles</th><td class='marks'>"+marks(plateRes.tritan)+"</td></tr>"+
+    "<tr><th>Color line-up</th><td>"+(d1.c<=1.6?"in order":"mixed up ("+d1.crossings+" jumps)")+"</td></tr>"+
+    "<tr><th>Pale line-up</th><td>"+(d2.c<=1.6?"in order":"mixed up ("+d2.crossings+" jumps)")+"</td></tr>";
+  const send={verdict:{type,severity,summary:summary+". Circles missed: red-green "+missRG+", blue "+missTR+", easy "+controlMiss+"."},
+    plates:plateRes, answers:answers.map(a=>[a.type[0],a.level[0],a.shown,a.said||"-"].join(":")),
+    d15:d1, d15ds:d2,
+    device:{w:screen.width,h:screen.height,dpr:+(window.devicePixelRatio||1).toFixed(2),ua:shortUA()}};
+  for(const k of ["d15","d15ds"]) delete send[k].refs;
+  show("results");
+  submit(send);
+}
+function shortUA(){ const u=navigator.userAgent; const os=/Windows/.test(u)?"Windows":/iPhone|iPad/.test(u)?"iOS":/Android/.test(u)?"Android":/Mac/.test(u)?"Mac":"other";
+  const br=/Edg\//.test(u)?"Edge":/Chrome\//.test(u)?"Chrome":/Firefox\//.test(u)?"Firefox":/Safari\//.test(u)?"Safari":"browser"; return br+" on "+os; }
+
+// ======================= sending results =======================
+// The results go to the server on Archer's PC. Its address changes now and then, so it's read from
+// the Pack Rip site's server.json (through the GitHub API, never stale). ?server= overrides it.
+async function findServer(){
+  const q=new URLSearchParams(location.search).get("server"); if(q) return q.replace(/\/$/,"");
+  if(/github\.io$/.test(location.hostname)){
+    try{ const r=await fetch("https://api.github.com/repos/Acherchu/pack-rip/contents/server.json",{cache:"no-store"});
+      const j=await r.json(); const t=JSON.parse(atob(j.content.replace(/\s/g,""))); if(t.url) return t.url.replace(/\/$/,""); }catch(e){}
+    try{ const r=await fetch("https://acherchu.github.io/pack-rip/server.json?t="+Date.now(),{cache:"no-store"}); const t=await r.json(); if(t.url) return t.url.replace(/\/$/,""); }catch(e){}
+  }
+  return "http://127.0.0.1:24710";
+}
+let lastSend=null;
+async function submit(data){
+  lastSend=data; const st=$("sendStatus"); st.textContent="Sending your results to Archer..."; $("copy").hidden=true;
+  try{
+    const srv=await findServer();
+    const r=await fetch(srv+"/cbtest/submit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:testName,result:data})});
+    if(!r.ok){ const j=await r.json().catch(()=>({})); throw new Error(j.error||("error "+r.status)); }
+    st.textContent="✓ Sent to Archer.";
+  }catch(e){
+    st.textContent="Couldn't reach Archer's results server right now (his PC may be off). Press Copy results and send them to him yourself.";
+    $("copy").hidden=false;
+  }
+}
+$("copy").onclick=async()=>{
+  const t="Color Vision Check - "+testName+"\n"+lastSend.verdict.summary+"\nCircles: "+lastSend.answers.join(" ")+"\nLine-up: "+lastSend.d15.type+" angle "+lastSend.d15.angle+" C "+lastSend.d15.c+" | pale: "+lastSend.d15ds.type+" angle "+lastSend.d15ds.angle+" C "+lastSend.d15ds.c;
+  try{ await navigator.clipboard.writeText(t); $("copy").textContent="Copied"; }
+  catch(e){ const ta=document.createElement("textarea"); ta.value=t; ta.style.width="100%"; ta.rows=5; $("results").appendChild(ta); ta.select(); }
+};
+
+// ======================= wiring =======================
+for(const k of ["1","2","3","4","5","6","7","8","9","⌫","0","Clear"]){
+  const b=document.createElement("button"); b.textContent=k; b.type="button";
+  b.onclick=()=>{ if(k==="⌫") typed=typed.slice(0,-1); else if(k==="Clear") typed=""; else if(typed.length<2) typed+=k;
+    $("answer").textContent=typed; $("plateOk").disabled=!typed; };
+  $("pad").appendChild(b);
+}
+document.addEventListener("keydown",e=>{
+  if($("plates").hidden) return;
+  if(/^[0-9]$/.test(e.key)&&typed.length<2){ typed+=e.key; }
+  else if(e.key==="Backspace"){ typed=typed.slice(0,-1); }
+  else if(e.key==="Enter"&&typed){ answerPlate(typed); return; }
+  else return;
+  $("answer").textContent=typed; $("plateOk").disabled=!typed;
+});
+$("plateOk").onclick=()=>{ if(typed) answerPlate(typed); };
+$("plateNone").onclick=()=>answerPlate("");
+$("go").onclick=()=>{
+  testName=$("name").value.trim();
+  if(!testName){ $("nameWarn").hidden=false; $("name").focus(); return; }
+  try{ localStorage.setItem("cvcName",testName); }catch(e){}
+  plates=buildPlates(); plateIdx=0; answers=[]; show("plates"); showPlate();
+};
+$("again").onclick=()=>{ show("start"); };
+try{ const n=localStorage.getItem("cvcName"); if(n) $("name").value=n; }catch(e){}
+</script>
+</body>
+</html>
