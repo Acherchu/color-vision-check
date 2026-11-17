@@ -54,6 +54,9 @@ canvas.plate{width:100%;max-width:420px;aspect-ratio:1;border-radius:50%;display
 .answer{font-family:var(--display);font-size:44px;font-variant-numeric:tabular-nums;text-align:center;min-height:62px;letter-spacing:.08em;background:#232323;border:1px solid var(--line);border-radius:10px;padding:4px}
 .pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .pad button{font-size:22px;padding:10px 0}
+.arrows{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:260px}
+.arrows button{font-size:26px;padding:12px 0}
+.arrows-mid{display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:14px}
 
 /* arrangement */
 .caps{display:flex;flex-wrap:wrap;gap:10px}
@@ -83,13 +86,14 @@ th{color:var(--muted);font-weight:400}
   <span class="eyebrow">About 5 minutes</span>
   <h1>Color Vision Check</h1>
   <p>Two short tests show whether you see colors the usual way, and if not, which kind of colorblindness you have and how strong it is. Your results are sent to Archer when you finish.</p>
-  <p class="muted"><b>Part 1</b> is 11 circles of dots with a number hidden in each. <b>Part 2</b> asks you to line up colored circles in order, twice.</p>
+  <p class="muted"><b>Part 1</b>: 11 circles of dots with a number hidden in each. <b>Part 2</b>: line up colored circles in order. <b>Part 3</b>: spot which way a faint colored ring opens, with one tap each time.</p>
   <div class="panel" style="background:#2f2f2f">
     <b>Before you start, for a fair result:</b>
     <ul class="check">
       <li>Turn <b>off</b> Night Light / Night Shift / any blue-light filter or "warm" screen mode.</li>
       <li>Turn the screen brightness up, and don't wear tinted glasses.</li>
       <li>Use a normal room light, not total darkness or bright sun on the screen.</li>
+      <li>Sit at a normal distance from the screen and don't zoom the page.</li>
     </ul>
   </div>
   <label for="name">Your name</label>
@@ -99,7 +103,7 @@ th{color:var(--muted);font-weight:400}
 
 <!-- PART 1: plates -->
 <section id="plates" class="panel" hidden>
-  <div class="row" style="justify-content:space-between"><span class="eyebrow">Part 1 of 2 &middot; dot circles</span><span class="eyebrow" id="plateCount"></span></div>
+  <div class="row" style="justify-content:space-between"><span class="eyebrow">Part 1 of 3 &middot; dot circles</span><span class="eyebrow" id="plateCount"></span></div>
   <div class="progress"><i id="plateBar"></i></div>
   <div class="plate-wrap">
     <canvas class="plate" id="plateCanvas" width="840" height="840" aria-label="Circle of colored dots with a hidden number"></canvas>
@@ -115,12 +119,31 @@ th{color:var(--muted);font-weight:400}
 
 <!-- PART 2: arrangement -->
 <section id="arrange" class="panel" hidden>
-  <div class="row" style="justify-content:space-between"><span class="eyebrow">Part 2 of 2 &middot; <span id="roundName">color order</span></span><span class="eyebrow" id="roundCount"></span></div>
+  <div class="row" style="justify-content:space-between"><span class="eyebrow">Part 2 of 3 &middot; color order</span></div>
   <h2>Line the colors up in order</h2>
   <p>The line starts with the circle on the left (it's already placed). Tap the circle from the pile below that looks <b>closest in color</b> to the last one in the line, and keep going until the pile is empty. Go with your first impression.</p>
   <div class="lineup" id="lineup"></div>
   <div class="caps" id="pile"></div>
   <div class="row"><button id="undo">Undo last</button><button class="primary" id="arrangeOk" disabled>Done</button></div>
+</section>
+
+<!-- PART 3: gap test -->
+<section id="gap" class="panel" hidden>
+  <div class="row" style="justify-content:space-between"><span class="eyebrow">Part 3 of 3 &middot; find the gap</span><span class="eyebrow" id="gapCount"></span></div>
+  <div class="progress"><i id="gapBar"></i></div>
+  <div class="plate-wrap">
+    <canvas class="plate" id="gapCanvas" width="840" height="840" aria-label="Circle of dots with a faint colored ring that has a gap"></canvas>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <p>There's a colored ring in the dots, shaped like a <b>C</b>. Which way does its gap point? It gets fainter as you go, so guess when you're unsure.</p>
+      <div class="arrows">
+        <span></span><button id="gUp" aria-label="Gap points up">&#9650;</button><span></span>
+        <button id="gLeft" aria-label="Gap points left">&#9664;</button><span class="arrows-mid">gap</span><button id="gRight" aria-label="Gap points right">&#9654;</button>
+        <span></span><button id="gDown" aria-label="Gap points down">&#9660;</button><span></span>
+      </div>
+      <button id="gNone">I can't see a ring</button>
+      <p class="muted" style="font-size:14px">Arrow keys work too.</p>
+    </div>
+  </div>
 </section>
 
 <!-- RESULTS -->
@@ -252,9 +275,95 @@ function scoreArrangement(order,caps){
   return {type, angle:+got.ang.toFixed(1), c:+c.toFixed(2), s:+s.toFixed(2), crossings, order:order.slice(1), refs:Object.fromEntries(Object.entries(refs).map(([k,v])=>[k,+v.toFixed(1)]))};
 }
 
+// ======================= part 3: gap test (Cambridge Colour Test style) =======================
+// A ring shaped like a C hides in dots of random brightness; only its COLOUR differs from the
+// background, by a set distance (in CIE 1976 u'v') along one of the three colorblind confusion lines:
+// from the grey background towards the protan, deutan or tritan copunctal point. Three interleaved
+// staircases make the difference smaller after a right answer and bigger after a wrong one, so each
+// one homes in on the smallest difference the person can see on that line (their threshold).
+// One tap per trial, 30 trials (10 per line). Colorblind people's threshold shoots up on their line.
+const GAP_BG=[0.1977,0.4689];
+const COPUNCT={protan:[0.678,0.501],deutan:[-1.217,0.782],tritan:[0.257,0.0]};
+const GAP_MAX={protan:0.11,deutan:0.064,tritan:0.11};       // biggest difference a normal screen can show
+const GAP_START={protan:0.07,deutan:0.05,tritan:0.08};
+function uvYtoLin(u,v,Y){ const X=Y*9*u/(4*v), Z=Y*(12-3*u-20*v)/(4*v);
+  return [3.2404542*X-1.5371385*Y-0.4985314*Z,-0.9692660*X+1.8760108*Y+0.0415560*Z,0.0556434*X-0.2040259*Y+1.0572252*Z]; }
+function gapDir(axis){ const c=COPUNCT[axis], d=[c[0]-GAP_BG[0],c[1]-GAP_BG[1]], n=Math.hypot(d[0],d[1]); return [d[0]/n,d[1]/n]; }
+// gap: 0 up, 1 right, 2 down, 3 left
+function inRing(x,y,S,gapDirIdx){
+  const dx=x-S/2, dy=y-S/2, r=Math.hypot(dx,dy);
+  if(r<S*0.17||r>S*0.31) return false;
+  const ang=Math.atan2(dy,dx), gapAng=[-Math.PI/2,0,Math.PI/2,Math.PI][gapDirIdx];
+  let d=Math.abs(ang-gapAng); d=Math.min(d,2*Math.PI-d);
+  return d>0.42;                                              // ~48 degree opening
+}
+function drawGap(cv,trial){
+  const S=cv.width, ctx=cv.getContext("2d"), R=rng(trial.seed), scale=S/380;
+  ctx.fillStyle="#202020"; ctx.fillRect(0,0,S,S);
+  const dir=gapDir(trial.axis), tgt=[GAP_BG[0]+dir[0]*trial.level,GAP_BG[1]+dir[1]*trial.level];
+  const rad=S*0.48, cx=S/2, cy=S/2, grid=new Map(), cell=24*scale, key=(i,j)=>i+","+j; let count=0;
+  for(let tries=0;tries<12000&&count<950;tries++){
+    const r=(3.5+7*R()*R())*scale, a=R()*Math.PI*2, dist=Math.sqrt(R())*(rad-r);
+    const x=cx+Math.cos(a)*dist, y=cy+Math.sin(a)*dist, gi=Math.floor(x/cell), gj=Math.floor(y/cell);
+    let clash=false;
+    for(let i=gi-1;i<=gi+1&&!clash;i++) for(let j=gj-1;j<=gj+1&&!clash;j++)
+      for(const t of grid.get(key(i,j))||[]){ const rr=t[2]+r+1.2*scale; if((t[0]-x)**2+(t[1]-y)**2<rr*rr){clash=true;break;} }
+    if(clash) continue;
+    const dot=[x,y,r], k=key(gi,gj); if(!grid.has(k)) grid.set(k,[]); grid.get(k).push(dot); count++;
+    const c=inRing(x,y,S,trial.gapDir)?tgt:GAP_BG;
+    const Y=0.10+0.12*R();                                    // brightness noise: same for ring and background
+    ctx.fillStyle=css(uvYtoLin(c[0],c[1],Y)); ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+  }
+}
+let gapStairs=null, gapTrial=null, gapDone=0;
+const GAP_REVERSALS=5, GAP_MAX_TRIALS=10;
+function startGap(){
+  gapStairs={}; gapDone=0;
+  for(const a of ["protan","deutan","tritan"]) gapStairs[a]={axis:a,level:GAP_START[a],trials:0,dir:0,reversals:[],twoDown:0,wrongAtMax:0,done:false,first:true};
+  show("gap"); nextGap();
+}
+function gapTotal(){ return Object.values(gapStairs).reduce((n,s)=>n+(s.done?s.trials:Math.max(s.trials,10)),0); }
+function nextGap(){
+  const open=Object.values(gapStairs).filter(s=>!s.done);
+  if(!open.length){ finish(); return; }
+  const st=open[Math.floor(Math.random()*open.length)];
+  gapTrial={axis:st.axis,level:st.level,gapDir:Math.floor(Math.random()*4),seed:Math.floor(Math.random()*4e9)+1};
+  $("gapCount").textContent=(gapDone+1)+" of about "+gapTotal();
+  $("gapBar").style.width=Math.min(100,gapDone/gapTotal()*100)+"%";
+  drawGap($("gapCanvas"),gapTrial);
+}
+function answerGap(choice){
+  if(!gapTrial) return;
+  const st=gapStairs[gapTrial.axis], ok=choice===gapTrial.gapDir, max=GAP_MAX[st.axis];
+  st.trials++; gapDone++;
+  let move=0;                                                  // -1 harder, +1 easier
+  if(st.first){ if(ok) move=-1; else { st.first=false; move=+1; } }   // quick start: down after every right answer
+  else if(ok){ st.twoDown++; if(st.twoDown>=2){ st.twoDown=0; move=-1; } }
+  else { st.twoDown=0; move=+1; }
+  if(move){
+    if(st.dir && move!==st.dir) st.reversals.push(st.level);
+    st.dir=move;
+    const f=st.first?0.62:(move<0?0.8:1.25);
+    st.level=move<0?st.level*f:Math.min(max,st.level*(st.first?1.6:f));
+  }
+  if(!ok && gapTrial.level>=max*0.999) st.wrongAtMax++; else if(ok) st.wrongAtMax=0;
+  if(st.reversals.length>=GAP_REVERSALS||st.trials>=GAP_MAX_TRIALS||st.wrongAtMax>=3) st.done=true;
+  gapTrial=null; nextGap();
+}
+function gapResult(){
+  const out={};
+  for(const a in gapStairs){ const st=gapStairs[a];
+    let thr;
+    if(st.wrongAtMax>=3) thr=GAP_MAX[a];
+    else { const rv=st.reversals.slice(-4); thr=rv.length?Math.exp(rv.reduce((s,x)=>s+Math.log(x),0)/rv.length):st.level; }
+    out[a]={thr:Math.round(thr*1e4), max:Math.round(GAP_MAX[a]*1e4), atMax:st.wrongAtMax>=3, trials:st.trials};
+  }
+  return out;                                                  // thresholds in u'v' x 10^-4 (the Cambridge Colour Test's unit)
+}
+
 // ======================= the test flow =======================
 const $=id=>document.getElementById(id);
-const show=id=>{ for(const s of ["start","plates","arrange","results"]) $(s).hidden=s!==id; window.scrollTo(0,0); };
+const show=id=>{ for(const s of ["start","plates","arrange","gap","results"]) $(s).hidden=s!==id; window.scrollTo(0,0); };
 let plates=[], plateIdx=0, typed="", answers=[], rounds=[], roundIdx=0, order=[], caps=[], result=null, testName="";
 
 function buildPlates(){
@@ -283,12 +392,11 @@ function answerPlate(txt){
 }
 
 function startArrange(){
-  rounds=[{name:"color order",key:"d15",chroma:34},{name:"pale color order",key:"d15ds",chroma:16}];
+  rounds=[{name:"color order",key:"d15",chroma:34}];
   roundIdx=0; result={}; showRound(); show("arrange");
 }
 function showRound(){
   const r=rounds[roundIdx]; caps=makeCaps(r.chroma); order=[0];
-  $("roundName").textContent=r.name; $("roundCount").textContent="round "+(roundIdx+1)+" of "+rounds.length;
   const pile=[...Array(N_CAPS-1).keys()].map(i=>i+1);
   for(let i=pile.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [pile[i],pile[j]]=[pile[j],pile[i]]; }
   $("pile").innerHTML="";
@@ -304,7 +412,7 @@ function drawLine(){
 $("undo").onclick=()=>{ if(order.length<=1) return; const i=order.pop(); const b=$("pile").querySelector('[data-i="'+i+'"]'); if(b) b.classList.remove("used"); drawLine(); };
 $("arrangeOk").onclick=()=>{
   const r=rounds[roundIdx]; result[r.key]=scoreArrangement(order,caps);
-  roundIdx++; if(roundIdx<rounds.length) showRound(); else finish();
+  roundIdx++; if(roundIdx<rounds.length) showRound(); else startGap();
 };
 
 function finish(){
@@ -314,16 +422,25 @@ function finish(){
     if(a.type==="control") controlMiss++;
     else if(a.type==="tritan"){ missTR+=a.weight; if(a.level==="strong") missTRstrong=true; }
     else { missRG+=a.weight; if(a.level==="strong") missRGstrong=true; } }
-  const d1=result.d15, d2=result.d15ds;
-  const arrType=(d1.type!=="normal"&&d1.type!=="unclear")?d1.type:(d2.type!=="normal"&&d2.type!=="unclear")?d2.type:"normal";
+  const d1=result.d15, cct=gapResult();
+  const arrType=(d1.type!=="normal"&&d1.type!=="unclear")?d1.type:"normal";
+  // gap test thresholds (u'v' x 10^-4). Normal on an ordinary screen: red-green under ~120, blue under ~200.
+  const RG_OK=120, TR_OK=200;
+  const tP=cct.protan.thr, tD=cct.deutan.thr, tT=cct.tritan.thr, tRG=Math.max(tP,tD);
+  const rgOut=tRG/RG_OK, trOut=tT/TR_OK;
   let type="normal", severity="", why="";
+  const sevFrom=(x,mild,mod)=>x<=mild?"mild":x<=mod?"moderate":"strong";
   if(controlMiss>=2){ type="unclear"; why="You missed the easy circles that everyone can read, so this result can't be trusted. Try again and type the number you see in each circle."; }
-  else if(missTR>missRG && (missTR>=3 || arrType==="tritan")){
-    type="tritan"; severity=missTRstrong||d1.type==="tritan"?"strong":missTR>=3?"moderate":"mild";
-  } else if(missRG>=2 || arrType==="protan" || arrType==="deutan"){
-    type=(arrType==="protan"||arrType==="deutan")?arrType:"redgreen";
-    severity=(missRGstrong||d1.type===type)?"strong":(missRG>=4||d2.type===type)?"moderate":"mild";
-  } else if(arrType==="tritan"){ type="tritan"; severity="mild"; }
+  else if(trOut>1.3 && trOut>rgOut*1.2 && (missTR>=1 || arrType==="tritan" || trOut>2)){
+    type="tritan"; severity=(cct.tritan.atMax||d1.type==="tritan")?"strong":sevFrom(tT,400,800);
+    if(missTRstrong&&severity==="mild") severity="moderate";
+  } else if(rgOut>1.3 || missRG>=3 || arrType==="protan" || arrType==="deutan"){
+    // which kind: the line-up's confusion angle if it shows one, else the gap test's two red-green lines
+    type=(arrType==="protan"||arrType==="deutan")?arrType:(tP>tD*1.2?"protan":tD>tP*1.2?"deutan":"redgreen");
+    // strength comes from the gap test (the most precise part); the circles and line-up can only raise it
+    severity=(cct.protan.atMax||cct.deutan.atMax||d1.type===type)?"strong":sevFrom(tRG,300,550);
+    if(missRGstrong&&severity==="mild") severity="moderate";
+  } else if(missTR>=3){ type="tritan"; severity="mild"; }
   const words={normal:"Normal color vision",protan:"Protan: red-weak",deutan:"Deutan: green-weak",tritan:"Tritan: blue-weak",redgreen:"Red-green colorblind",unclear:"Unclear result"};
   const explain={
     normal:"You found the hidden numbers and lined the colors up in order. Your color vision looks normal.",
@@ -343,15 +460,18 @@ function finish(){
     "<tr><th>Green-weak circles</th><td class='marks'>"+marks(plateRes.deutan)+"</td></tr>"+
     "<tr><th>Blue-weak circles</th><td class='marks'>"+marks(plateRes.tritan)+"</td></tr>"+
     "<tr><th>Color line-up</th><td>"+(d1.c<=1.6?"in order":"mixed up ("+d1.crossings+" jumps)")+"</td></tr>"+
-    "<tr><th>Pale line-up</th><td>"+(d2.c<=1.6?"in order":"mixed up ("+d2.crossings+" jumps)")+"</td></tr>";
+    "<tr><th>Gap test: red-weak line</th><td>"+gapWord(cct.protan,RG_OK)+"</td></tr>"+
+    "<tr><th>Gap test: green-weak line</th><td>"+gapWord(cct.deutan,RG_OK)+"</td></tr>"+
+    "<tr><th>Gap test: blue-weak line</th><td>"+gapWord(cct.tritan,TR_OK)+"</td></tr>";
   const send={verdict:{type,severity,summary:summary+". Circles missed: red-green "+missRG+", blue "+missTR+", easy "+controlMiss+"."},
     plates:plateRes, answers:answers.map(a=>[a.type[0],a.level[0],a.shown,a.said||"-"].join(":")),
-    d15:d1, d15ds:d2,
+    d15:d1, cct,
     device:{w:screen.width,h:screen.height,dpr:+(window.devicePixelRatio||1).toFixed(2),ua:shortUA()}};
-  for(const k of ["d15","d15ds"]) delete send[k].refs;
+  delete send.d15.refs;
   show("results");
   submit(send);
 }
+function gapWord(g,ok){ const x=g.thr/ok; return (g.atMax?"couldn't see it even at full strength":x<=1?"normal":x<=2.5?"a bit weak":x<=4.5?"weak":"very weak")+" <span class='muted'>("+g.thr+")</span>"; }
 function shortUA(){ const u=navigator.userAgent; const os=/Windows/.test(u)?"Windows":/iPhone|iPad/.test(u)?"iOS":/Android/.test(u)?"Android":/Mac/.test(u)?"Mac":"other";
   const br=/Edg\//.test(u)?"Edge":/Chrome\//.test(u)?"Chrome":/Firefox\//.test(u)?"Firefox":/Safari\//.test(u)?"Safari":"browser"; return br+" on "+os; }
 
@@ -381,7 +501,7 @@ async function submit(data){
   }
 }
 $("copy").onclick=async()=>{
-  const t="Color Vision Check - "+testName+"\n"+lastSend.verdict.summary+"\nCircles: "+lastSend.answers.join(" ")+"\nLine-up: "+lastSend.d15.type+" angle "+lastSend.d15.angle+" C "+lastSend.d15.c+" | pale: "+lastSend.d15ds.type+" angle "+lastSend.d15ds.angle+" C "+lastSend.d15ds.c;
+  const t="Color Vision Check - "+testName+"\n"+lastSend.verdict.summary+"\nCircles: "+lastSend.answers.join(" ")+"\nLine-up: "+lastSend.d15.type+" angle "+lastSend.d15.angle+" C "+lastSend.d15.c+" | gap test (x10^-4 u'v'): red "+lastSend.cct.protan.thr+", green "+lastSend.cct.deutan.thr+", blue "+lastSend.cct.tritan.thr;
   try{ await navigator.clipboard.writeText(t); $("copy").textContent="Copied"; }
   catch(e){ const ta=document.createElement("textarea"); ta.value=t; ta.style.width="100%"; ta.rows=5; $("results").appendChild(ta); ta.select(); }
 };
@@ -409,6 +529,13 @@ $("go").onclick=()=>{
   try{ localStorage.setItem("cvcName",testName); }catch(e){}
   plates=buildPlates(); plateIdx=0; answers=[]; show("plates"); showPlate();
 };
+for(const [id,d] of [["gUp",0],["gRight",1],["gDown",2],["gLeft",3]]) $(id).onclick=()=>answerGap(d);
+$("gNone").onclick=()=>answerGap(-1);
+document.addEventListener("keydown",e=>{
+  if($("gap").hidden) return;
+  const m={ArrowUp:0,ArrowRight:1,ArrowDown:2,ArrowLeft:3}[e.key];
+  if(m!==undefined){ e.preventDefault(); answerGap(m); }
+});
 $("again").onclick=()=>{ show("start"); };
 try{ const n=localStorage.getItem("cvcName"); if(n) $("name").value=n; }catch(e){}
 </script>
