@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Color Vision Check</title>
-<meta name="description" content="A free colorblind test: dot plates plus a color arrangement test. Takes about 5 minutes.">
+<meta name="description" content="A free colorblind test: dot plates, a per-color test and a color gap test. Takes about 5 minutes.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
@@ -58,13 +58,18 @@ canvas.plate{width:100%;max-width:420px;aspect-ratio:1;border-radius:50%;display
 .arrows button{font-size:26px;padding:12px 0}
 .arrows-mid{display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:14px}
 
-/* arrangement */
-.caps{display:flex;flex-wrap:wrap;gap:10px}
-.cap{width:52px;height:52px;border-radius:50%;border:2px solid #1e1e1e;padding:0;min-height:0;box-shadow:0 1px 0 #555 inset}
-.cap.pilot{outline:2px dashed #9a9a9a;outline-offset:3px;cursor:default}
-.cap.used{visibility:hidden}
-.lineup{display:flex;flex-wrap:wrap;gap:10px;min-height:66px;padding:6px;border:1px dashed var(--line);border-radius:12px;background:#262626}
-.lineup .cap{cursor:default}
+/* odd one out */
+canvas.odd{width:100%;max-width:420px;aspect-ratio:1;display:block;margin:0 auto;cursor:pointer;border-radius:12px;background:#2b2b2b}
+.quad{display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:260px}
+.quad button{font-size:24px;padding:14px 0}
+.bars{display:flex;flex-direction:column;gap:8px}
+.bar{display:grid;grid-template-columns:76px minmax(0,1fr) 120px;gap:10px;align-items:center}
+.bar .sw{display:flex;align-items:center;gap:8px;font-weight:700}
+.bar .sw i{width:14px;height:14px;border-radius:50%;display:inline-block;flex:none}
+.bar .track{height:12px;background:#232323;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.bar .track b{display:block;height:100%;background:#d9d9d9}
+.bar .lab{font-size:15px;color:var(--muted)}
+@media (max-width:480px){.bar{grid-template-columns:68px minmax(0,1fr) 92px}}
 
 /* results */
 .verdict{font-family:var(--display);font-size:30px;line-height:1.15}
@@ -86,7 +91,7 @@ th{color:var(--muted);font-weight:400}
   <span class="eyebrow">About 5 minutes</span>
   <h1>Color Vision Check</h1>
   <p>Two short tests show whether you see colors the usual way, and if not, which kind of colorblindness you have and how strong it is. Your results are sent to Archer when you finish.</p>
-  <p class="muted"><b>Part 1</b>: 11 circles of dots with a number hidden in each. <b>Part 2</b>: line up colored circles in order. <b>Part 3</b>: spot which way a faint colored ring opens, with one tap each time.</p>
+  <p class="muted"><b>Part 1</b>: 11 circles of dots with a number hidden in each. <b>Part 2</b>: spot the one circle with a little color in it, for 8 different colors. <b>Part 3</b>: spot which way a faint colored ring opens. Parts 2 and 3 are one tap each time.</p>
   <div class="panel" style="background:#2f2f2f">
     <b>Before you start, for a fair result:</b>
     <ul class="check">
@@ -117,14 +122,22 @@ th{color:var(--muted);font-weight:400}
   </div>
 </section>
 
-<!-- PART 2: arrangement -->
-<section id="arrange" class="panel" hidden>
-  <div class="row" style="justify-content:space-between"><span class="eyebrow">Part 2 of 3 &middot; color order</span></div>
-  <h2>Line the colors up in order</h2>
-  <p>The line starts with the circle on the left (it's already placed). Tap the circle from the pile below that looks <b>closest in color</b> to the last one in the line, and keep going until the pile is empty. Go with your first impression.</p>
-  <div class="lineup" id="lineup"></div>
-  <div class="caps" id="pile"></div>
-  <div class="row"><button id="undo">Undo last</button><button class="primary" id="arrangeOk" disabled>Done</button></div>
+<!-- PART 2: odd one out, per colour -->
+<section id="odd" class="panel" hidden>
+  <div class="row" style="justify-content:space-between"><span class="eyebrow">Part 2 of 3 &middot; odd one out</span><span class="eyebrow" id="oddCount"></span></div>
+  <div class="progress"><i id="oddBar"></i></div>
+  <div class="plate-wrap">
+    <canvas class="odd" id="oddCanvas" width="840" height="840" aria-label="Four circles of dots, one is slightly colored"></canvas>
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <p>Three of these circles are grey. <b>One has a little color in it.</b> Tap the colored one. It gets harder as you go, so guess when you're unsure.</p>
+      <div class="quad">
+        <button id="o0" aria-label="Top left">&#9700;</button><button id="o1" aria-label="Top right">&#9701;</button>
+        <button id="o2" aria-label="Bottom left">&#9699;</button><button id="o3" aria-label="Bottom right">&#9698;</button>
+      </div>
+      <button id="oNone">They all look grey</button>
+      <p class="muted" style="font-size:14px">You can also tap the circle itself.</p>
+    </div>
+  </div>
 </section>
 
 <!-- PART 3: gap test -->
@@ -151,6 +164,7 @@ th{color:var(--muted);font-weight:400}
   <span class="eyebrow">Your result</span>
   <div class="verdict" id="verdict"></div>
   <p id="explain"></p>
+  <div id="colors" class="panel" style="background:#2f2f2f"></div>
   <div class="status" id="sendStatus">Sending your results to Archer...</div>
   <table id="detail"></table>
   <p class="muted">This is a screen test, so it's a good guide but not a diagnosis: screens show colors a little differently. An eye doctor can do the exact test.</p>
@@ -227,53 +241,79 @@ function drawPlate(cv,plate){
   }
 }
 
-// ======================= part 2: arrangement (D-15 style) =======================
-// 16 caps (1 fixed + 15 to place) evenly round the hue circle in CIE L*u*v*, in the same
-// blue -> green -> yellow -> red -> purple order as the Farnsworth D-15. Scored with the
-// Vingrys & King-Smith (1988) moment method: the angle of the main confusion axis says which kind,
-// the C-index (1 = perfect) says how strong.
-const N_CAPS=16;
-function makeCaps(chroma){
-  const caps=[];
-  for(let i=0;i<N_CAPS;i++){
-    const h=(255-i*(320/(N_CAPS-1)))*Math.PI/180;
-    const u=chroma*Math.cos(h), v=chroma*Math.sin(h), lin=luvToLin(58,u,v);
-    caps.push({i,u,v,lin,css:css(lin)});
+// ======================= part 2: odd one out, per colour =======================
+// For 8 named colours: four dot circles, three grey and one tinted towards that colour (only the colour
+// differs - every dot's brightness is scrambled, so a colour that looks darker to someone gives nothing
+// away). How faint a tint each person can still pick out is measured per colour with QUEST (Watson &
+// Pelli 1983): a Bayesian estimate of the threshold, updated after every tap, which also picks the
+// next tint strength - 6 taps per colour. Result: how strongly they see each colour, against a typical
+// normal eye (a MacAdam-style ellipse: ~0.006 u'v' along red-green, ~0.010 along blue-yellow).
+const ODD_BG=[0.1977,0.4689];
+const HUES=[ // name, swatch, direction in u'v' from the grey (from these sRGB colours), most the screen can show
+  {key:"red",name:"Red",rgb:[220,40,40],max:0.20},{key:"orange",name:"Orange",rgb:[240,140,30],max:0.11},
+  {key:"yellow",name:"Yellow",rgb:[230,220,40],max:0.08},{key:"green",name:"Green",rgb:[40,180,60],max:0.10},
+  {key:"teal",name:"Teal",rgb:[30,180,170],max:0.058},{key:"blue",name:"Blue",rgb:[40,80,230],max:0.15},
+  {key:"purple",name:"Purple",rgb:[140,60,200],max:0.16},{key:"pink",name:"Pink",rgb:[230,80,170],max:0.16}];
+const ODD_TRIALS=6;
+function rgbToUV(rgb){ const l=rgb.map(c=>{c/=255;return c<=0.04045?c/12.92:Math.pow((c+0.055)/1.055,2.4)});
+  const X=0.4124564*l[0]+0.3575761*l[1]+0.1804375*l[2],Y=0.2126729*l[0]+0.7151522*l[1]+0.0721750*l[2],Z=0.0193339*l[0]+0.1191920*l[1]+0.9503041*l[2],d=X+15*Y+3*Z;
+  return [4*X/d,9*Y/d]; }
+for(const h of HUES){ const uv=rgbToUV(h.rgb), d=[uv[0]-ODD_BG[0],uv[1]-ODD_BG[1]], n=Math.hypot(d[0],d[1]); h.dir=[d[0]/n,d[1]/n];
+  h.normal=1/Math.sqrt((h.dir[0]/0.006)**2+(h.dir[1]/0.010)**2); }
+// QUEST on a grid of log2 thresholds
+const PSY=(s,T)=>0.25+(1-0.25-0.03)*(1-Math.exp(-Math.pow(s/T,3.5)));
+function questNew(max){ const g=[]; for(let x=Math.log2(0.003);x<=Math.log2(max)+1.5;x+=0.05) g.push(x);
+  return {g,p:g.map(x=>Math.exp(-0.5*((x-Math.log2(0.012))/2.2)**2)),max,n:0,wrongAtMax:0}; }
+function questMean(q){ let w=0,x=0; for(let i=0;i<q.g.length;i++){ w+=q.p[i]; x+=q.p[i]*q.g[i]; } return Math.pow(2,x/w); }
+function questUpdate(q,s,ok){ let m=0; for(let i=0;i<q.g.length;i++){ const P=PSY(s,Math.pow(2,q.g[i])); q.p[i]*=ok?P:1-P; if(q.p[i]>m) m=q.p[i]; } for(let i=0;i<q.p.length;i++) q.p[i]/=m; q.n++; }
+function drawOdd(cv,trial){
+  const S=cv.width, ctx=cv.getContext("2d"), R=rng(trial.seed), scale=S/380;
+  ctx.fillStyle="#2b2b2b"; ctx.fillRect(0,0,S,S);
+  const h=HUES[trial.hue], tint=[ODD_BG[0]+h.dir[0]*trial.level,ODD_BG[1]+h.dir[1]*trial.level];
+  const centres=[[0.27,0.27],[0.73,0.27],[0.27,0.73],[0.73,0.73]];
+  for(let q=0;q<4;q++){
+    const cx=centres[q][0]*S, cy=centres[q][1]*S, rad=S*0.215, uv=q===trial.odd?tint:ODD_BG;
+    ctx.fillStyle="#202020"; ctx.beginPath(); ctx.arc(cx,cy,rad+4*scale,0,Math.PI*2); ctx.fill();
+    const grid=new Map(), cell=16*scale, key=(i,j)=>i+","+j; let count=0;
+    for(let tries=0;tries<4000&&count<260;tries++){
+      const r=(2.6+4.6*R()*R())*scale, a=R()*Math.PI*2, dist=Math.sqrt(R())*(rad-r);
+      const x=cx+Math.cos(a)*dist, y=cy+Math.sin(a)*dist, gi=Math.floor(x/cell), gj=Math.floor(y/cell);
+      let clash=false;
+      for(let i=gi-1;i<=gi+1&&!clash;i++) for(let j=gj-1;j<=gj+1&&!clash;j++)
+        for(const t of grid.get(key(i,j))||[]){ const rr=t[2]+r+1*scale; if((t[0]-x)**2+(t[1]-y)**2<rr*rr){clash=true;break;} }
+      if(clash) continue;
+      const dot=[x,y,r], k=key(gi,gj); if(!grid.has(k)) grid.set(k,[]); grid.get(k).push(dot); count++;
+      ctx.fillStyle=css(uvYtoLin(uv[0],uv[1],0.10+0.12*R())); ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
+    }
   }
-  return caps;
 }
-function vks(order,caps){
-  let su=0,sv=0,suv=0;
-  for(let k=1;k<order.length;k++){ const a=caps[order[k-1]],b=caps[order[k]]; const du=b.u-a.u,dv=b.v-a.v; su+=du*du; sv+=dv*dv; suv+=du*dv; }
-  const tr=su+sv, det=su*sv-suv*suv, disc=Math.sqrt(Math.max(0,tr*tr/4-det));
-  const l1=tr/2+disc, l2=Math.max(1e-9,tr/2-disc), n=order.length-1;
-  let ang=Math.atan2(l1-su,suv)*180/Math.PI;           // direction of the major axis
-  if(Math.abs(suv)<1e-9) ang=su>=sv?0:90;
-  while(ang>90) ang-=180; while(ang<=-90) ang+=180;
-  return {ang, major:Math.sqrt(l1/n), minor:Math.sqrt(l2/n)};
+let oddQ=null, oddTrial=null, oddDone=0;
+function startOdd(){ oddQ=HUES.map(h=>questNew(h.max)); oddDone=0; show("odd"); nextOdd(); }
+function nextOdd(){
+  const open=oddQ.map((q,i)=>i).filter(i=>oddQ[i].n<ODD_TRIALS);
+  if(!open.length){ startGap(); return; }
+  // spread the colours out: the one with the fewest taps so far, ties broken at random
+  const least=Math.min(...open.map(i=>oddQ[i].n)), pick=open.filter(i=>oddQ[i].n===least);
+  const hi=pick[Math.floor(Math.random()*pick.length)], q=oddQ[hi];
+  oddTrial={hue:hi,level:Math.min(q.max,questMean(q)),odd:Math.floor(Math.random()*4),seed:Math.floor(Math.random()*4e9)+1};
+  const total=HUES.length*ODD_TRIALS;
+  $("oddCount").textContent=(oddDone+1)+" of "+total; $("oddBar").style.width=(oddDone/total*100)+"%";
+  drawOdd($("oddCanvas"),oddTrial);
 }
-// what a person with each kind of colorblindness would do: pick the closest-LOOKING cap each time
-function dichromatOrder(caps,type){
-  const seen=caps.map(c=>linToLuv(mv(LMS2RGB,mv(SIM[type],mv(RGB2LMS,c.lin)))));
-  const left=new Set(caps.map(c=>c.i).slice(1)), order=[0];
-  while(left.size){ const last=seen[order[order.length-1]]; let best=null,bd=1e9;
-    for(const j of left){ const s=seen[j], d=(s[1]-last[1])**2+(s[2]-last[2])**2+(s[0]-last[0])**2; if(d<bd){bd=d;best=j;} }
-    order.push(best); left.delete(best); }
-  return order;
+function answerOdd(choice){
+  if(!oddTrial) return;
+  const q=oddQ[oddTrial.hue], ok=choice===oddTrial.odd;
+  if(!ok && oddTrial.level>=q.max*0.999) q.wrongAtMax++;
+  questUpdate(q,oddTrial.level,ok); oddDone++; oddTrial=null; nextOdd();
 }
-function scoreArrangement(order,caps){
-  const perfect=vks([...Array(N_CAPS).keys()],caps), got=vks(order,caps);
-  const c=got.major/perfect.major, s=(got.major/got.minor)/(perfect.major/perfect.minor);
-  // reference angles for this cap set, from simulated dichromats
-  let type="normal", bestDiff=999, refs={};
-  for(const t of ["protan","deutan","tritan"]){ refs[t]=vks(dichromatOrder(caps,t),caps).ang; }
-  if(c>1.6){
-    for(const t in refs){ let d=Math.abs(got.ang-refs[t])%180; d=Math.min(d,180-d); if(d<bestDiff){bestDiff=d;type=t;} }
-    if(bestDiff>30) type="unclear";
-  }
-  let crossings=0; for(let k=1;k<order.length;k++) if(Math.abs(order[k]-order[k-1])>2) crossings++;
-  return {type, angle:+got.ang.toFixed(1), c:+c.toFixed(2), s:+s.toFixed(2), crossings, order:order.slice(1), refs:Object.fromEntries(Object.entries(refs).map(([k,v])=>[k,+v.toFixed(1)]))};
+function oddResult(){
+  const out={};
+  HUES.forEach((h,i)=>{ const q=oddQ[i], thr=questMean(q), cant=q.wrongAtMax>=2||thr>h.max*1.15;
+    const pct=cant?0:Math.max(1,Math.min(100,Math.round(h.normal*1.5/thr*100)));
+    out[h.key]={thr:Math.round(Math.min(thr,h.max*1.5)*1e4),pct,cant}; });
+  return out;
 }
+function hueWord(r){ return r.cant?"can't see it":r.pct>=55?"normal":r.pct>=30?"a bit weak":r.pct>=15?"weak":"very weak"; }
 
 // ======================= part 3: gap test (Cambridge Colour Test style) =======================
 // A ring shaped like a C hides in dots of random brightness; only its COLOUR differs from the
@@ -363,8 +403,8 @@ function gapResult(){
 
 // ======================= the test flow =======================
 const $=id=>document.getElementById(id);
-const show=id=>{ for(const s of ["start","plates","arrange","gap","results"]) $(s).hidden=s!==id; window.scrollTo(0,0); };
-let plates=[], plateIdx=0, typed="", answers=[], rounds=[], roundIdx=0, order=[], caps=[], result=null, testName="";
+const show=id=>{ for(const s of ["start","plates","odd","gap","results"]) $(s).hidden=s!==id; window.scrollTo(0,0); };
+let plates=[], plateIdx=0, typed="", answers=[], testName="";
 
 function buildPlates(){
   const R=rng(Date.now()&0xffffffff);
@@ -388,32 +428,8 @@ function showPlate(){
 function answerPlate(txt){
   const p=plates[plateIdx]; answers.push({type:p.type,level:p.level,weight:p.weight,shown:p.number,said:txt,ok:parseInt(txt,10)===p.number});
   plateIdx++;
-  if(plateIdx<plates.length) showPlate(); else startArrange();
+  if(plateIdx<plates.length) showPlate(); else startOdd();
 }
-
-function startArrange(){
-  rounds=[{name:"color order",key:"d15",chroma:34}];
-  roundIdx=0; result={}; showRound(); show("arrange");
-}
-function showRound(){
-  const r=rounds[roundIdx]; caps=makeCaps(r.chroma); order=[0];
-  const pile=[...Array(N_CAPS-1).keys()].map(i=>i+1);
-  for(let i=pile.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [pile[i],pile[j]]=[pile[j],pile[i]]; }
-  $("pile").innerHTML="";
-  for(const i of pile){ const b=document.createElement("button"); b.className="cap"; b.style.background=caps[i].css; b.dataset.i=i; b.setAttribute("aria-label","color circle");
-    b.onclick=()=>{ if(b.classList.contains("used")) return; order.push(i); b.classList.add("used"); drawLine(); }; $("pile").appendChild(b); }
-  drawLine();
-}
-function drawLine(){
-  const L=$("lineup"); L.innerHTML="";
-  order.forEach((i,k)=>{ const d=document.createElement("span"); d.className="cap"+(k===0?" pilot":""); d.style.background=caps[i].css; d.style.display="inline-block"; L.appendChild(d); });
-  $("arrangeOk").disabled=order.length<N_CAPS; $("undo").disabled=order.length<=1;
-}
-$("undo").onclick=()=>{ if(order.length<=1) return; const i=order.pop(); const b=$("pile").querySelector('[data-i="'+i+'"]'); if(b) b.classList.remove("used"); drawLine(); };
-$("arrangeOk").onclick=()=>{
-  const r=rounds[roundIdx]; result[r.key]=scoreArrangement(order,caps);
-  roundIdx++; if(roundIdx<rounds.length) showRound(); else startGap();
-};
 
 function finish(){
   const plateRes={control:[],protan:[],deutan:[],tritan:[]}; let missRG=0, missTR=0, missRGstrong=false, missTRstrong=false, controlMiss=0;
@@ -422,8 +438,8 @@ function finish(){
     if(a.type==="control") controlMiss++;
     else if(a.type==="tritan"){ missTR+=a.weight; if(a.level==="strong") missTRstrong=true; }
     else { missRG+=a.weight; if(a.level==="strong") missRGstrong=true; } }
-  const d1=result.d15, cct=gapResult();
-  const arrType=(d1.type!=="normal"&&d1.type!=="unclear")?d1.type:"normal";
+  const cct=gapResult(), hues=oddResult();
+  const arrType="normal";
   // gap test thresholds (u'v' x 10^-4). Normal on an ordinary screen: red-green under ~120, blue under ~200.
   const RG_OK=120, TR_OK=200;
   const tP=cct.protan.thr, tD=cct.deutan.thr, tT=cct.tritan.thr, tRG=Math.max(tP,tD);
@@ -432,42 +448,48 @@ function finish(){
   const sevFrom=(x,mild,mod)=>x<=mild?"mild":x<=mod?"moderate":"strong";
   if(controlMiss>=2){ type="unclear"; why="You missed the easy circles that everyone can read, so this result can't be trusted. Try again and type the number you see in each circle."; }
   else if(trOut>1.3 && trOut>rgOut*1.2 && (missTR>=1 || arrType==="tritan" || trOut>2)){
-    type="tritan"; severity=(cct.tritan.atMax||d1.type==="tritan")?"strong":sevFrom(tT,400,800);
+    type="tritan"; severity=cct.tritan.atMax?"strong":sevFrom(tT,400,800);
     if(missTRstrong&&severity==="mild") severity="moderate";
   } else if(rgOut>1.3 || missRG>=3 || arrType==="protan" || arrType==="deutan"){
-    // which kind: the line-up's confusion angle if it shows one, else the gap test's two red-green lines
-    type=(arrType==="protan"||arrType==="deutan")?arrType:(tP>tD*1.2?"protan":tD>tP*1.2?"deutan":"redgreen");
-    // strength comes from the gap test (the most precise part); the circles and line-up can only raise it
-    severity=(cct.protan.atMax||cct.deutan.atMax||d1.type===type)?"strong":sevFrom(tRG,300,550);
+    // which kind: the gap test's two red-green lines, backed up by which colours came out weak
+    // (red-weak: red and teal-blue; green-weak: teal and pink-magenta)
+    const pw=k=>100-hues[k].pct;
+    const lean=(pw("red")+pw("orange"))-(pw("pink")+pw("teal"))*0.5;
+    type=tP>tD*1.2?"protan":tD>tP*1.2?"deutan":(lean>25?"protan":lean<-15?"deutan":"redgreen");
+    // strength comes from the gap test (the most precise part); missing strong circles can only raise it
+    severity=(cct.protan.atMax||cct.deutan.atMax)?"strong":sevFrom(tRG,300,550);
     if(missRGstrong&&severity==="mild") severity="moderate";
   } else if(missTR>=3){ type="tritan"; severity="mild"; }
   const words={normal:"Normal color vision",protan:"Protan: red-weak",deutan:"Deutan: green-weak",tritan:"Tritan: blue-weak",redgreen:"Red-green colorblind",unclear:"Unclear result"};
   const explain={
-    normal:"You found the hidden numbers and lined the colors up in order. Your color vision looks normal.",
+    normal:"You found the hidden numbers and picked out faint colors like most people do. Your color vision looks normal.",
     protan:"Your eyes pick up red light weakly. Reds look darker than they do to most people, and red, green, orange and brown can look alike.",
     deutan:"Your eyes pick up green light weakly. This is the most common kind. Red, green, orange and brown can look alike, and so can blue and purple.",
     tritan:"Your eyes pick up blue light weakly. This kind is rare. Blue and green can look alike, and so can yellow and pink.",
-    redgreen:"You missed the red-green circles, but the color line-up didn't show clearly whether it's the red-weak or green-weak kind. Green-weak is far more common.",
+    redgreen:"You're red-green colorblind, but the test couldn't tell clearly whether it's the red-weak or green-weak kind. Green-weak is far more common.",
     unclear:why};
   const sevWord={strong:"Strong",moderate:"Moderate",mild:"Mild"};
   const summary=type==="normal"?"Normal":(sevWord[severity]?sevWord[severity]+" ":"")+words[type];
   $("verdict").textContent=type==="normal"||type==="unclear"?words[type]:(sevWord[severity]+" "+words[type].charAt(0).toLowerCase()+words[type].slice(1));
   $("explain").textContent=explain[type]+(severity==="mild"?" It's mild: most colors still look normal to you.":"");
   const marks=arr=>arr.map(x=>'<span class="'+(x?"y":"n")+'">'+(x?"✓":"✗")+"</span>").join("");
+  // how strongly they see each colour
+  const weak=HUES.filter(h=>hues[h.key].cant||hues[h.key].pct<30).map(h=>h.name.toLowerCase());
+  $("colors").innerHTML='<p><b>How strongly you see each color</b> <span class="muted">(100% = like most people)</span></p><div class="bars">'+
+    HUES.map(h=>{ const r=hues[h.key]; return '<div class="bar"><span class="sw"><i style="background:rgb('+h.rgb.join(",")+')"></i>'+h.name+'</span><span class="track"><b style="width:'+(r.cant?0:r.pct)+'%"></b></span><span class="lab">'+(r.cant?"0%":r.pct+"%")+' &middot; '+hueWord(r)+'</span></div>'; }).join("")+'</div>'+
+    (weak.length?'<p class="muted">Colors that look washed-out or grey to you: '+weak.join(", ")+'. Pale or dark shades of these are the easiest to mix up.</p>':'');
   $("detail").innerHTML=
     "<tr><th>Easy circles</th><td class='marks'>"+marks(plateRes.control)+"</td></tr>"+
     "<tr><th>Red-weak circles</th><td class='marks'>"+marks(plateRes.protan)+"</td></tr>"+
     "<tr><th>Green-weak circles</th><td class='marks'>"+marks(plateRes.deutan)+"</td></tr>"+
     "<tr><th>Blue-weak circles</th><td class='marks'>"+marks(plateRes.tritan)+"</td></tr>"+
-    "<tr><th>Color line-up</th><td>"+(d1.c<=1.6?"in order":"mixed up ("+d1.crossings+" jumps)")+"</td></tr>"+
     "<tr><th>Gap test: red-weak line</th><td>"+gapWord(cct.protan,RG_OK)+"</td></tr>"+
     "<tr><th>Gap test: green-weak line</th><td>"+gapWord(cct.deutan,RG_OK)+"</td></tr>"+
     "<tr><th>Gap test: blue-weak line</th><td>"+gapWord(cct.tritan,TR_OK)+"</td></tr>";
   const send={verdict:{type,severity,summary:summary+". Circles missed: red-green "+missRG+", blue "+missTR+", easy "+controlMiss+"."},
     plates:plateRes, answers:answers.map(a=>[a.type[0],a.level[0],a.shown,a.said||"-"].join(":")),
-    d15:d1, cct,
+    hues, cct,
     device:{w:screen.width,h:screen.height,dpr:+(window.devicePixelRatio||1).toFixed(2),ua:shortUA()}};
-  delete send.d15.refs;
   show("results");
   submit(send);
 }
@@ -501,7 +523,7 @@ async function submit(data){
   }
 }
 $("copy").onclick=async()=>{
-  const t="Color Vision Check - "+testName+"\n"+lastSend.verdict.summary+"\nCircles: "+lastSend.answers.join(" ")+"\nLine-up: "+lastSend.d15.type+" angle "+lastSend.d15.angle+" C "+lastSend.d15.c+" | gap test (x10^-4 u'v'): red "+lastSend.cct.protan.thr+", green "+lastSend.cct.deutan.thr+", blue "+lastSend.cct.tritan.thr;
+  const t="Color Vision Check - "+testName+"\n"+lastSend.verdict.summary+"\nCircles: "+lastSend.answers.join(" ")+"\nColors: "+HUES.map(h=>h.name+" "+lastSend.hues[h.key].pct+"%").join(", ")+"\nGap test (x10^-4 u'v'): red "+lastSend.cct.protan.thr+", green "+lastSend.cct.deutan.thr+", blue "+lastSend.cct.tritan.thr;
   try{ await navigator.clipboard.writeText(t); $("copy").textContent="Copied"; }
   catch(e){ const ta=document.createElement("textarea"); ta.value=t; ta.style.width="100%"; ta.rows=5; $("results").appendChild(ta); ta.select(); }
 };
@@ -529,6 +551,9 @@ $("go").onclick=()=>{
   try{ localStorage.setItem("cvcName",testName); }catch(e){}
   plates=buildPlates(); plateIdx=0; answers=[]; show("plates"); showPlate();
 };
+for(let i=0;i<4;i++) $("o"+i).onclick=()=>answerOdd(i);
+$("oNone").onclick=()=>answerOdd(-1);
+$("oddCanvas").onclick=e=>{ const b=e.target.getBoundingClientRect(), x=(e.clientX-b.left)/b.width, y=(e.clientY-b.top)/b.height; answerOdd((y>0.5?2:0)+(x>0.5?1:0)); };
 for(const [id,d] of [["gUp",0],["gRight",1],["gDown",2],["gLeft",3]]) $(id).onclick=()=>answerGap(d);
 $("gNone").onclick=()=>answerGap(-1);
 document.addEventListener("keydown",e=>{
