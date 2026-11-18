@@ -4,21 +4,15 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Color Vision Check</title>
-<meta name="description" content="A free colorblind test: dot plates, a per-color test and a color gap test. Takes about 5 minutes.">
+<meta name="description" content="Tap every part of the color wheel that looks red, orange, yellow, green, blue, indigo and violet to you.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
 <style>
-/* Layout: one centred column on a fixed neutral grey - colour tests need a neutral surround, so this
-   page is deliberately one theme (a mid-dark grey with no colour cast) in both light and dark mode. */
+/* Layout: one centred column; the wheel big on the left, the question on the right (stacked on phones).
+   Deliberately one neutral grey theme (no colour cast) so nothing tints the colours being judged. */
 :root{
-  --bg:#2b2b2b;          /* neutral surround (equal R=G=B on purpose) */
-  --panel:#353535;
-  --line:#4a4a4a;
-  --fg:#ececec;
-  --muted:#a8a8a8;
-  --accent:#e8e8e8;      /* no coloured accent: nothing on screen should tint what you see */
-  --ok:#9bd3a6; --bad:#f0a08f;
+  --bg:#2b2b2b; --panel:#353535; --line:#4a4a4a; --fg:#ececec; --muted:#a8a8a8; --accent:#e8e8e8;
   --display:"Space Grotesk",system-ui,sans-serif;
   --body:"Atkinson Hyperlegible",system-ui,"Segoe UI",sans-serif;
   color-scheme:dark;
@@ -26,58 +20,36 @@
 *{box-sizing:border-box}
 html,body{background:var(--bg);color:var(--fg)}
 body{margin:0;font:17px/1.5 var(--body);padding-block:28px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
-main{max-width:760px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+main{max-width:820px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
 h1,h2{font-family:var(--display);font-weight:700;letter-spacing:-.01em;text-wrap:balance;margin:0}
 h1{font-size:clamp(30px,6vw,44px)}
-h2{font-size:24px}
+h2{font-size:clamp(24px,4.5vw,32px)}
 p{margin:0;max-width:62ch}
 .muted{color:var(--muted)}
 .eyebrow{font-family:var(--display);font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
 .panel{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:20px;display:flex;flex-direction:column;gap:14px}
-ul.check{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px}
 label{font-weight:700}
 input[type=text]{font:inherit;color:var(--fg);background:#232323;border:1px solid var(--line);border-radius:8px;padding:12px 14px;width:100%;max-width:360px}
-input[type=text]:focus-visible,button:focus-visible{outline:3px solid #ffffff;outline-offset:2px}
+input[type=text]:focus-visible,button:focus-visible{outline:3px solid #fff;outline-offset:2px}
 button{font:inherit;font-weight:700;cursor:pointer;border-radius:10px;border:1px solid var(--line);background:#404040;color:var(--fg);padding:12px 18px;min-height:48px}
 button:hover{background:#4a4a4a}
 button.primary{background:var(--accent);color:#1b1b1b;border-color:var(--accent)}
-button.primary:hover{background:#ffffff}
-button:disabled{opacity:.4;cursor:default}
+button.primary:hover{background:#fff}
 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
 .progress{height:6px;background:#3e3e3e;border-radius:3px;overflow:hidden}
 .progress>i{display:block;height:100%;background:#d8d8d8;width:0;transition:width .3s}
-
-/* plates */
-.plate-wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,260px);gap:22px;align-items:start}
-@media (max-width:640px){.plate-wrap{grid-template-columns:minmax(0,1fr)}}
-canvas.plate{width:100%;max-width:420px;aspect-ratio:1;border-radius:50%;display:block;margin:0 auto;background:#202020}
-.answer{font-family:var(--display);font-size:44px;font-variant-numeric:tabular-nums;text-align:center;min-height:62px;letter-spacing:.08em;background:#232323;border:1px solid var(--line);border-radius:10px;padding:4px}
-.pad{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.pad button{font-size:22px;padding:10px 0}
-.arrows{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:260px}
-.arrows button{font-size:26px;padding:12px 0}
-.arrows-mid{display:flex;align-items:center;justify-content:center;color:var(--muted);font-size:14px}
-
-/* odd one out */
-canvas.odd{width:100%;max-width:420px;aspect-ratio:1;display:block;margin:0 auto;cursor:pointer;border-radius:12px;background:#2b2b2b}
-.quad{display:grid;grid-template-columns:1fr 1fr;gap:8px;max-width:260px}
-.quad button{font-size:24px;padding:14px 0}
-.bars{display:flex;flex-direction:column;gap:8px}
-.bar{display:grid;grid-template-columns:76px minmax(0,1fr) 120px;gap:10px;align-items:center}
-.bar .sw{display:flex;align-items:center;gap:8px;font-weight:700}
-.bar .sw i{width:14px;height:14px;border-radius:50%;display:inline-block;flex:none}
-.bar .track{height:12px;background:#232323;border:1px solid var(--line);border-radius:6px;overflow:hidden}
-.bar .track b{display:block;height:100%;background:#d9d9d9}
-.bar .lab{font-size:15px;color:var(--muted)}
-@media (max-width:480px){.bar{grid-template-columns:68px minmax(0,1fr) 92px}}
-
-/* results */
-.verdict{font-family:var(--display);font-size:30px;line-height:1.15}
-table{border-collapse:collapse;font-variant-numeric:tabular-nums}
-th,td{text-align:left;padding:6px 14px 6px 0;vertical-align:top}
-th{color:var(--muted);font-weight:400}
-.marks span{display:inline-block;width:24px;font-weight:700}
-.y{color:var(--ok)}.n{color:var(--bad)}
+.ask{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,280px);gap:24px;align-items:center}
+@media (max-width:660px){.ask{grid-template-columns:minmax(0,1fr)}}
+svg.wheel{width:100%;max-width:440px;display:block;margin:0 auto;touch-action:manipulation}
+svg.wheel path{cursor:pointer;stroke:#2b2b2b;stroke-width:3}
+svg.wheel path.on{stroke:#fff;stroke-width:7}
+svg.wheel text{font:700 30px var(--display);fill:#fff;paint-order:stroke;stroke:#000;stroke-width:5;pointer-events:none}
+.colorword{font-family:var(--display);font-size:clamp(36px,8vw,54px);line-height:1;text-transform:uppercase;letter-spacing:.02em}
+.count{font-size:15px;color:var(--muted)}
+.minis{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:14px}
+.mini{display:flex;flex-direction:column;align-items:center;gap:6px;background:#2f2f2f;border:1px solid var(--line);border-radius:10px;padding:10px}
+.mini svg{width:120px;height:120px}
+.mini b{font-family:var(--display);text-transform:uppercase;letter-spacing:.04em}
 .status{padding:10px 14px;border-radius:8px;background:#232323;border:1px solid var(--line)}
 @media (prefers-reduced-motion:reduce){.progress>i{transition:none}}
 [hidden]{display:none!important}
@@ -86,420 +58,103 @@ th{color:var(--muted);font-weight:400}
 <body>
 <main>
 
-<!-- START -->
 <section id="start" class="panel">
-  <span class="eyebrow">About 5 minutes</span>
+  <span class="eyebrow">About 2 minutes</span>
   <h1>Color Vision Check</h1>
-  <p>Two short tests show whether you see colors the usual way, and if not, which kind of colorblindness you have and how strong it is. Your results are sent to Archer when you finish.</p>
-  <p class="muted"><b>Part 1</b>: 11 circles of dots with a number hidden in each. <b>Part 2</b>: spot the one circle with a little color in it, for 8 different colors. <b>Part 3</b>: spot which way a faint colored ring opens. Parts 2 and 3 are one tap each time.</p>
-  <div class="panel" style="background:#2f2f2f">
-    <b>Before you start, for a fair result:</b>
-    <ul class="check">
-      <li>Turn <b>off</b> Night Light / Night Shift / any blue-light filter or "warm" screen mode.</li>
-      <li>Turn the screen brightness up, and don't wear tinted glasses.</li>
-      <li>Use a normal room light, not total darkness or bright sun on the screen.</li>
-      <li>Sit at a normal distance from the screen and don't zoom the page.</li>
-    </ul>
-  </div>
+  <p>You'll see a color wheel and be asked to find each color of the rainbow in it: red, orange, yellow, green, blue, indigo and violet. Tap <b>every</b> part of the wheel that looks like that color to you. There are no wrong answers: pick what <i>you</i> see. Your answers are sent to Archer when you finish.</p>
+  <p class="muted">For a fair result: turn off Night Light / blue-light filters and turn the screen brightness up.</p>
   <label for="name">Your name</label>
   <input type="text" id="name" maxlength="30" autocomplete="nickname" placeholder="So Archer knows who took it">
-  <div class="row"><button class="primary" id="go">Start the test</button><span class="muted" id="nameWarn" hidden>Type your name first.</span></div>
+  <div class="row"><button class="primary" id="go">Start</button><span class="muted" id="nameWarn" hidden>Type your name first.</span></div>
 </section>
 
-<!-- PART 1: plates -->
-<section id="plates" class="panel" hidden>
-  <div class="row" style="justify-content:space-between"><span class="eyebrow">Part 1 of 3 &middot; dot circles</span><span class="eyebrow" id="plateCount"></span></div>
-  <div class="progress"><i id="plateBar"></i></div>
-  <div class="plate-wrap">
-    <canvas class="plate" id="plateCanvas" width="840" height="840" aria-label="Circle of colored dots with a hidden number"></canvas>
-    <div style="display:flex;flex-direction:column;gap:12px">
-      <p>What number do you see in the circle? Look at the <b>shape</b> the dots make, not how bright they are. Don't stare longer than about 5 seconds.</p>
-      <div class="answer" id="answer" aria-live="polite"></div>
-      <div class="pad" id="pad"></div>
-      <button class="primary" id="plateOk" disabled>Next</button>
-      <button id="plateNone">I can't see a number</button>
+<section id="test" class="panel" hidden>
+  <div class="row" style="justify-content:space-between"><span class="eyebrow" id="stepText"></span><span class="eyebrow">tap again to un-pick</span></div>
+  <div class="progress"><i id="bar"></i></div>
+  <div class="ask">
+    <svg class="wheel" id="wheel" viewBox="-220 -220 440 440" role="group" aria-label="Color wheel with 12 parts"></svg>
+    <div style="display:flex;flex-direction:column;gap:14px">
+      <p>Tap every part that looks</p>
+      <div class="colorword" id="word"></div>
+      <p class="count" id="count">Nothing picked yet.</p>
+      <button class="primary" id="next">Next</button>
+      <button id="none">None of them look like that</button>
+      <button id="back">&larr; Back</button>
     </div>
   </div>
 </section>
 
-<!-- PART 2: odd one out, per colour -->
-<section id="odd" class="panel" hidden>
-  <div class="row" style="justify-content:space-between"><span class="eyebrow">Part 2 of 3 &middot; odd one out</span><span class="eyebrow" id="oddCount"></span></div>
-  <div class="progress"><i id="oddBar"></i></div>
-  <div class="plate-wrap">
-    <canvas class="odd" id="oddCanvas" width="840" height="840" aria-label="Four circles of dots, one is slightly colored"></canvas>
-    <div style="display:flex;flex-direction:column;gap:12px">
-      <p>Three of these circles are grey. <b>One has a little color in it.</b> Tap the colored one. It gets harder as you go, so guess when you're unsure.</p>
-      <div class="quad">
-        <button id="o0" aria-label="Top left">&#9700;</button><button id="o1" aria-label="Top right">&#9701;</button>
-        <button id="o2" aria-label="Bottom left">&#9699;</button><button id="o3" aria-label="Bottom right">&#9698;</button>
-      </div>
-      <button id="oNone">They all look grey</button>
-      <p class="muted" style="font-size:14px">You can also tap the circle itself.</p>
-    </div>
-  </div>
-</section>
-
-<!-- PART 3: gap test -->
-<section id="gap" class="panel" hidden>
-  <div class="row" style="justify-content:space-between"><span class="eyebrow">Part 3 of 3 &middot; find the gap</span><span class="eyebrow" id="gapCount"></span></div>
-  <div class="progress"><i id="gapBar"></i></div>
-  <div class="plate-wrap">
-    <canvas class="plate" id="gapCanvas" width="840" height="840" aria-label="Circle of dots with a faint colored ring that has a gap"></canvas>
-    <div style="display:flex;flex-direction:column;gap:12px">
-      <p>There's a colored ring in the dots, shaped like a <b>C</b>. Which way does its gap point? It gets fainter as you go, so guess when you're unsure.</p>
-      <div class="arrows">
-        <span></span><button id="gUp" aria-label="Gap points up">&#9650;</button><span></span>
-        <button id="gLeft" aria-label="Gap points left">&#9664;</button><span class="arrows-mid">gap</span><button id="gRight" aria-label="Gap points right">&#9654;</button>
-        <span></span><button id="gDown" aria-label="Gap points down">&#9660;</button><span></span>
-      </div>
-      <button id="gNone">I can't see a ring</button>
-      <p class="muted" style="font-size:14px">Arrow keys work too.</p>
-    </div>
-  </div>
-</section>
-
-<!-- RESULTS -->
-<section id="results" class="panel" hidden>
-  <span class="eyebrow">Your result</span>
-  <div class="verdict" id="verdict"></div>
-  <p id="explain"></p>
-  <div id="colors" class="panel" style="background:#2f2f2f"></div>
-  <div class="status" id="sendStatus">Sending your results to Archer...</div>
-  <table id="detail"></table>
-  <p class="muted">This is a screen test, so it's a good guide but not a diagnosis: screens show colors a little differently. An eye doctor can do the exact test.</p>
-  <div class="row"><button id="again">Take it again</button><button id="copy" hidden>Copy results</button></div>
+<section id="done" class="panel" hidden>
+  <span class="eyebrow">Your answers</span>
+  <h2>Thanks!</h2>
+  <div class="status" id="sendStatus">Sending your answers to Archer...</div>
+  <div class="minis" id="minis"></div>
+  <div class="row"><button id="again">Do it again</button><button id="copy" hidden>Copy answers</button></div>
 </section>
 
 </main>
 <script>
 "use strict";
-// ======================= colour maths =======================
-// linear sRGB <-> LMS cones (Vienot, Brettel & Mollon 1999) and dichromat simulation
-const RGB2LMS=[[17.8824,43.5161,4.11935],[3.45565,27.1554,3.86714],[0.0299566,0.184309,1.46709]];
-const LMS2RGB=[[0.0809444479,-0.130504409,0.116721066],[-0.0102485335,0.0540193266,-0.113614708],[-0.000365296938,-0.00412161469,0.693511405]];
-const SIM={protan:[[0,2.02344,-2.52581],[0,1,0],[0,0,1]],deutan:[[1,0,0],[0.494207,0,1.24827],[0,0,1]],tritan:[[1,0,0],[0,1,0],[-0.395913,0.801109,0]]};
-const mv=(m,v)=>[m[0][0]*v[0]+m[0][1]*v[1]+m[0][2]*v[2],m[1][0]*v[0]+m[1][1]*v[1]+m[1][2]*v[2],m[2][0]*v[0]+m[2][1]*v[1]+m[2][2]*v[2]];
-const toGamma=x=>{x=Math.min(1,Math.max(0,x));return x<=0.0031308?12.92*x:1.055*Math.pow(x,1/2.4)-0.055};
-const css=lin=>"rgb("+lin.map(x=>Math.round(toGamma(x)*255)).join(",")+")";
-
-// CIE L*u*v* (D65) -> linear sRGB
-const UN=0.19783, VN=0.46832;
-function luvToLin(L,u,v){
-  const Y=L>8?Math.pow((L+16)/116,3):L/903.3;
-  const up=u/(13*L)+UN, vp=v/(13*L)+VN;
-  const X=Y*9*up/(4*vp), Z=Y*(12-3*up-20*vp)/(4*vp);
-  return [3.2404542*X-1.5371385*Y-0.4985314*Z,-0.9692660*X+1.8760108*Y+0.0415560*Z,0.0556434*X-0.2040259*Y+1.0572252*Z];
-}
-function linToLuv(c){
-  const X=0.4124564*c[0]+0.3575761*c[1]+0.1804375*c[2],Y=0.2126729*c[0]+0.7151522*c[1]+0.0721750*c[2],Z=0.0193339*c[0]+0.1191920*c[1]+0.9503041*c[2];
-  const d=X+15*Y+3*Z; if(d<=0) return [0,0,0];
-  const up=4*X/d, vp=9*Y/d, L=Y>0.008856?116*Math.cbrt(Y)-16:903.3*Y;
-  return [L,13*L*(up-UN),13*L*(vp-VN)];
-}
-
-// ======================= part 1: plates =======================
-// Each plate hides a number drawn in colours that differ ONLY in what one kind of cone picks up
-// (red L, green M or blue S) - with every dot's brightness scrambled, so brightness gives nothing away.
-// Someone missing (or weak in) that cone can't find the number; everyone else can.
-const DIGITS=["01110100011001110101110011000101110","00100011000010000100001000010001110","01110100010000100010001000100011111","11111000100010000010000011000101110","00010001100101010010111110001000010","11111100001111000001000011000101110","00110010001000011110100011000101110","11111000010001000100010000100001000","01110100011000101110100011000101110","01110100011000101111000010001001100"];
-function inDigits(n,u,v){
-  const w=0.26,h=0.46,gap=0.06,x0=0.5-w-gap/2,y0=0.5-h/2,ds=[Math.floor(n/10),n%10];
-  for(let k=0;k<2;k++){
-    const dx=x0+k*(w+gap); if(u<dx||u>=dx+w||v<y0||v>=y0+h) continue;
-    const col=Math.floor((u-dx)/w*5), row=Math.floor((v-y0)/h*7);
-    if(col>=0&&col<=4&&row>=0&&row<=6&&DIGITS[ds[k]][row*5+col]==="1") return true;
-  }
-  return false;
-}
-function coneDir(type){ const c=type==="protan"?0:type==="deutan"?1:2; const d=[LMS2RGB[0][c],LMS2RGB[1][c],LMS2RGB[2][c]]; const m=Math.max(...d.map(Math.abs)); return d.map(x=>x/m); }
-function rng(seed){ let s=seed>>>0||1; return()=>{ s^=s<<13; s>>>=0; s^=s>>17; s^=s<<5; s>>>=0; return s/4294967296; }; }
-
-function drawPlate(cv,plate){
-  const S=cv.width, ctx=cv.getContext("2d"), R=rng(plate.seed);
-  ctx.fillStyle="#202020"; ctx.fillRect(0,0,S,S);
-  const base=plate.type==="tritan"?[0.30,0.30,0.18]:[0.28,0.27,0.20];
-  const d=plate.type==="control"?[0,0,0]:coneDir(plate.type).map(x=>x*plate.amount);
-  const rad=S*0.48, cx=S/2, cy=S/2, scale=S/380, taken=[];
-  const grid=new Map(), cell=24*scale, key=(i,j)=>i+","+j;
-  for(let tries=0;tries<12000&&taken.length<950;tries++){
-    const r=(3.5+7*R()*R())*scale, a=R()*Math.PI*2, dist=Math.sqrt(R())*(rad-r);
-    const x=cx+Math.cos(a)*dist, y=cy+Math.sin(a)*dist, gi=Math.floor(x/cell), gj=Math.floor(y/cell);
-    let clash=false;
-    for(let i=gi-1;i<=gi+1&&!clash;i++) for(let j=gj-1;j<=gj+1&&!clash;j++){
-      for(const t of grid.get(key(i,j))||[]){ const rr=t[2]+r+1.2*scale; if((t[0]-x)**2+(t[1]-y)**2<rr*rr){clash=true;break;} }
-    }
-    if(clash) continue;
-    const dot=[x,y,r]; taken.push(dot); const k=key(gi,gj); if(!grid.has(k)) grid.set(k,[]); grid.get(k).push(dot);
-    const fig=inDigits(plate.number,x/S,y/S);
-    let lin;
-    if(plate.type==="control") lin=fig?[0.55,0.32,0.08]:[0.10,0.16,0.12];
-    else lin=base.map((b,i)=>b+(fig?d[i]:-d[i]));
-    const bright=0.62+0.6*R();
-    lin=lin.map(x=>x*bright+(R()-0.5)*0.012);
-    ctx.fillStyle=css(lin); ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
-  }
-}
-
-// ======================= part 2: odd one out, per colour =======================
-// For 8 named colours: four dot circles, three grey and one tinted towards that colour (only the colour
-// differs - every dot's brightness is scrambled, so a colour that looks darker to someone gives nothing
-// away). How faint a tint each person can still pick out is measured per colour with QUEST (Watson &
-// Pelli 1983): a Bayesian estimate of the threshold, updated after every tap, which also picks the
-// next tint strength - 6 taps per colour. Result: how strongly they see each colour, against a typical
-// normal eye (a MacAdam-style ellipse: ~0.006 u'v' along red-green, ~0.010 along blue-yellow).
-const ODD_BG=[0.1977,0.4689];
-const HUES=[ // name, swatch, direction in u'v' from the grey (from these sRGB colours), most the screen can show
-  {key:"red",name:"Red",rgb:[220,40,40],max:0.20},{key:"orange",name:"Orange",rgb:[240,140,30],max:0.11},
-  {key:"yellow",name:"Yellow",rgb:[230,220,40],max:0.08},{key:"green",name:"Green",rgb:[40,180,60],max:0.10},
-  {key:"teal",name:"Teal",rgb:[30,180,170],max:0.058},{key:"blue",name:"Blue",rgb:[40,80,230],max:0.15},
-  {key:"purple",name:"Purple",rgb:[140,60,200],max:0.16},{key:"pink",name:"Pink",rgb:[230,80,170],max:0.16}];
-const ODD_TRIALS=6;
-function rgbToUV(rgb){ const l=rgb.map(c=>{c/=255;return c<=0.04045?c/12.92:Math.pow((c+0.055)/1.055,2.4)});
-  const X=0.4124564*l[0]+0.3575761*l[1]+0.1804375*l[2],Y=0.2126729*l[0]+0.7151522*l[1]+0.0721750*l[2],Z=0.0193339*l[0]+0.1191920*l[1]+0.9503041*l[2],d=X+15*Y+3*Z;
-  return [4*X/d,9*Y/d]; }
-for(const h of HUES){ const uv=rgbToUV(h.rgb), d=[uv[0]-ODD_BG[0],uv[1]-ODD_BG[1]], n=Math.hypot(d[0],d[1]); h.dir=[d[0]/n,d[1]/n];
-  h.normal=1/Math.sqrt((h.dir[0]/0.006)**2+(h.dir[1]/0.010)**2); }
-// QUEST on a grid of log2 thresholds
-const PSY=(s,T)=>0.25+(1-0.25-0.03)*(1-Math.exp(-Math.pow(s/T,3.5)));
-function questNew(max){ const g=[]; for(let x=Math.log2(0.003);x<=Math.log2(max)+1.5;x+=0.05) g.push(x);
-  return {g,p:g.map(x=>Math.exp(-0.5*((x-Math.log2(0.012))/2.2)**2)),max,n:0,wrongAtMax:0}; }
-function questMean(q){ let w=0,x=0; for(let i=0;i<q.g.length;i++){ w+=q.p[i]; x+=q.p[i]*q.g[i]; } return Math.pow(2,x/w); }
-function questUpdate(q,s,ok){ let m=0; for(let i=0;i<q.g.length;i++){ const P=PSY(s,Math.pow(2,q.g[i])); q.p[i]*=ok?P:1-P; if(q.p[i]>m) m=q.p[i]; } for(let i=0;i<q.p.length;i++) q.p[i]/=m; q.n++; }
-function drawOdd(cv,trial){
-  const S=cv.width, ctx=cv.getContext("2d"), R=rng(trial.seed), scale=S/380;
-  ctx.fillStyle="#2b2b2b"; ctx.fillRect(0,0,S,S);
-  const h=HUES[trial.hue], tint=[ODD_BG[0]+h.dir[0]*trial.level,ODD_BG[1]+h.dir[1]*trial.level];
-  const centres=[[0.27,0.27],[0.73,0.27],[0.27,0.73],[0.73,0.73]];
-  for(let q=0;q<4;q++){
-    const cx=centres[q][0]*S, cy=centres[q][1]*S, rad=S*0.215, uv=q===trial.odd?tint:ODD_BG;
-    ctx.fillStyle="#202020"; ctx.beginPath(); ctx.arc(cx,cy,rad+4*scale,0,Math.PI*2); ctx.fill();
-    const grid=new Map(), cell=16*scale, key=(i,j)=>i+","+j; let count=0;
-    for(let tries=0;tries<4000&&count<260;tries++){
-      const r=(2.6+4.6*R()*R())*scale, a=R()*Math.PI*2, dist=Math.sqrt(R())*(rad-r);
-      const x=cx+Math.cos(a)*dist, y=cy+Math.sin(a)*dist, gi=Math.floor(x/cell), gj=Math.floor(y/cell);
-      let clash=false;
-      for(let i=gi-1;i<=gi+1&&!clash;i++) for(let j=gj-1;j<=gj+1&&!clash;j++)
-        for(const t of grid.get(key(i,j))||[]){ const rr=t[2]+r+1*scale; if((t[0]-x)**2+(t[1]-y)**2<rr*rr){clash=true;break;} }
-      if(clash) continue;
-      const dot=[x,y,r], k=key(gi,gj); if(!grid.has(k)) grid.set(k,[]); grid.get(k).push(dot); count++;
-      ctx.fillStyle=css(uvYtoLin(uv[0],uv[1],0.10+0.12*R())); ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
-    }
-  }
-}
-let oddQ=null, oddTrial=null, oddDone=0;
-function startOdd(){ oddQ=HUES.map(h=>questNew(h.max)); oddDone=0; show("odd"); nextOdd(); }
-function nextOdd(){
-  const open=oddQ.map((q,i)=>i).filter(i=>oddQ[i].n<ODD_TRIALS);
-  if(!open.length){ startGap(); return; }
-  // spread the colours out: the one with the fewest taps so far, ties broken at random
-  const least=Math.min(...open.map(i=>oddQ[i].n)), pick=open.filter(i=>oddQ[i].n===least);
-  const hi=pick[Math.floor(Math.random()*pick.length)], q=oddQ[hi];
-  oddTrial={hue:hi,level:Math.min(q.max,questMean(q)),odd:Math.floor(Math.random()*4),seed:Math.floor(Math.random()*4e9)+1};
-  const total=HUES.length*ODD_TRIALS;
-  $("oddCount").textContent=(oddDone+1)+" of "+total; $("oddBar").style.width=(oddDone/total*100)+"%";
-  drawOdd($("oddCanvas"),oddTrial);
-}
-function answerOdd(choice){
-  if(!oddTrial) return;
-  const q=oddQ[oddTrial.hue], ok=choice===oddTrial.odd;
-  if(!ok && oddTrial.level>=q.max*0.999) q.wrongAtMax++;
-  questUpdate(q,oddTrial.level,ok); oddDone++; oddTrial=null; nextOdd();
-}
-function oddResult(){
-  const out={};
-  HUES.forEach((h,i)=>{ const q=oddQ[i], thr=questMean(q), cant=q.wrongAtMax>=2||thr>h.max*1.15;
-    const pct=cant?0:Math.max(1,Math.min(100,Math.round(h.normal*1.5/thr*100)));
-    out[h.key]={thr:Math.round(Math.min(thr,h.max*1.5)*1e4),pct,cant}; });
-  return out;
-}
-function hueWord(r){ return r.cant?"can't see it":r.pct>=55?"normal":r.pct>=30?"a bit weak":r.pct>=15?"weak":"very weak"; }
-
-// ======================= part 3: gap test (Cambridge Colour Test style) =======================
-// A ring shaped like a C hides in dots of random brightness; only its COLOUR differs from the
-// background, by a set distance (in CIE 1976 u'v') along one of the three colorblind confusion lines:
-// from the grey background towards the protan, deutan or tritan copunctal point. Three interleaved
-// staircases make the difference smaller after a right answer and bigger after a wrong one, so each
-// one homes in on the smallest difference the person can see on that line (their threshold).
-// One tap per trial, 30 trials (10 per line). Colorblind people's threshold shoots up on their line.
-const GAP_BG=[0.1977,0.4689];
-const COPUNCT={protan:[0.678,0.501],deutan:[-1.217,0.782],tritan:[0.257,0.0]};
-const GAP_MAX={protan:0.11,deutan:0.064,tritan:0.11};       // biggest difference a normal screen can show
-const GAP_START={protan:0.07,deutan:0.05,tritan:0.08};
-function uvYtoLin(u,v,Y){ const X=Y*9*u/(4*v), Z=Y*(12-3*u-20*v)/(4*v);
-  return [3.2404542*X-1.5371385*Y-0.4985314*Z,-0.9692660*X+1.8760108*Y+0.0415560*Z,0.0556434*X-0.2040259*Y+1.0572252*Z]; }
-function gapDir(axis){ const c=COPUNCT[axis], d=[c[0]-GAP_BG[0],c[1]-GAP_BG[1]], n=Math.hypot(d[0],d[1]); return [d[0]/n,d[1]/n]; }
-// gap: 0 up, 1 right, 2 down, 3 left
-function inRing(x,y,S,gapDirIdx){
-  const dx=x-S/2, dy=y-S/2, r=Math.hypot(dx,dy);
-  if(r<S*0.17||r>S*0.31) return false;
-  const ang=Math.atan2(dy,dx), gapAng=[-Math.PI/2,0,Math.PI/2,Math.PI][gapDirIdx];
-  let d=Math.abs(ang-gapAng); d=Math.min(d,2*Math.PI-d);
-  return d>0.42;                                              // ~48 degree opening
-}
-function drawGap(cv,trial){
-  const S=cv.width, ctx=cv.getContext("2d"), R=rng(trial.seed), scale=S/380;
-  ctx.fillStyle="#202020"; ctx.fillRect(0,0,S,S);
-  const dir=gapDir(trial.axis), tgt=[GAP_BG[0]+dir[0]*trial.level,GAP_BG[1]+dir[1]*trial.level];
-  const rad=S*0.48, cx=S/2, cy=S/2, grid=new Map(), cell=24*scale, key=(i,j)=>i+","+j; let count=0;
-  for(let tries=0;tries<12000&&count<950;tries++){
-    const r=(3.5+7*R()*R())*scale, a=R()*Math.PI*2, dist=Math.sqrt(R())*(rad-r);
-    const x=cx+Math.cos(a)*dist, y=cy+Math.sin(a)*dist, gi=Math.floor(x/cell), gj=Math.floor(y/cell);
-    let clash=false;
-    for(let i=gi-1;i<=gi+1&&!clash;i++) for(let j=gj-1;j<=gj+1&&!clash;j++)
-      for(const t of grid.get(key(i,j))||[]){ const rr=t[2]+r+1.2*scale; if((t[0]-x)**2+(t[1]-y)**2<rr*rr){clash=true;break;} }
-    if(clash) continue;
-    const dot=[x,y,r], k=key(gi,gj); if(!grid.has(k)) grid.set(k,[]); grid.get(k).push(dot); count++;
-    const c=inRing(x,y,S,trial.gapDir)?tgt:GAP_BG;
-    const Y=0.10+0.12*R();                                    // brightness noise: same for ring and background
-    ctx.fillStyle=css(uvYtoLin(c[0],c[1],Y)); ctx.beginPath(); ctx.arc(x,y,r,0,Math.PI*2); ctx.fill();
-  }
-}
-let gapStairs=null, gapTrial=null, gapDone=0;
-const GAP_REVERSALS=5, GAP_MAX_TRIALS=10;
-function startGap(){
-  gapStairs={}; gapDone=0;
-  for(const a of ["protan","deutan","tritan"]) gapStairs[a]={axis:a,level:GAP_START[a],trials:0,dir:0,reversals:[],twoDown:0,wrongAtMax:0,done:false,first:true};
-  show("gap"); nextGap();
-}
-function gapTotal(){ return Object.values(gapStairs).reduce((n,s)=>n+(s.done?s.trials:Math.max(s.trials,10)),0); }
-function nextGap(){
-  const open=Object.values(gapStairs).filter(s=>!s.done);
-  if(!open.length){ finish(); return; }
-  const st=open[Math.floor(Math.random()*open.length)];
-  gapTrial={axis:st.axis,level:st.level,gapDir:Math.floor(Math.random()*4),seed:Math.floor(Math.random()*4e9)+1};
-  $("gapCount").textContent=(gapDone+1)+" of about "+gapTotal();
-  $("gapBar").style.width=Math.min(100,gapDone/gapTotal()*100)+"%";
-  drawGap($("gapCanvas"),gapTrial);
-}
-function answerGap(choice){
-  if(!gapTrial) return;
-  const st=gapStairs[gapTrial.axis], ok=choice===gapTrial.gapDir, max=GAP_MAX[st.axis];
-  st.trials++; gapDone++;
-  let move=0;                                                  // -1 harder, +1 easier
-  if(st.first){ if(ok) move=-1; else { st.first=false; move=+1; } }   // quick start: down after every right answer
-  else if(ok){ st.twoDown++; if(st.twoDown>=2){ st.twoDown=0; move=-1; } }
-  else { st.twoDown=0; move=+1; }
-  if(move){
-    if(st.dir && move!==st.dir) st.reversals.push(st.level);
-    st.dir=move;
-    const f=st.first?0.62:(move<0?0.8:1.25);
-    st.level=move<0?st.level*f:Math.min(max,st.level*(st.first?1.6:f));
-  }
-  if(!ok && gapTrial.level>=max*0.999) st.wrongAtMax++; else if(ok) st.wrongAtMax=0;
-  if(st.reversals.length>=GAP_REVERSALS||st.trials>=GAP_MAX_TRIALS||st.wrongAtMax>=3) st.done=true;
-  gapTrial=null; nextGap();
-}
-function gapResult(){
-  const out={};
-  for(const a in gapStairs){ const st=gapStairs[a];
-    let thr;
-    if(st.wrongAtMax>=3) thr=GAP_MAX[a];
-    else { const rv=st.reversals.slice(-4); thr=rv.length?Math.exp(rv.reduce((s,x)=>s+Math.log(x),0)/rv.length):st.level; }
-    out[a]={thr:Math.round(thr*1e4), max:Math.round(GAP_MAX[a]*1e4), atMax:st.wrongAtMax>=3, trials:st.trials};
-  }
-  return out;                                                  // thresholds in u'v' x 10^-4 (the Cambridge Colour Test's unit)
-}
-
-// ======================= the test flow =======================
+// the 12 parts of the wheel (an RYB colour wheel), clockwise from the top - colours sampled from the
+// picture Archer chose. The names are only for Archer's results, never shown to the person taking it.
+const SEGS=[["#d52027","red"],["#f46423","red-orange"],["#fd831b","orange"],["#fcb410","yellow-orange"],["#f5ef1a","yellow"],["#8dc445","yellow-green"],
+            ["#08b252","green"],["#33bbb4","teal"],["#2357bc","blue"],["#4c489c","blue-violet"],["#723b96","violet"],["#b5399b","red-violet"]];
+const ASK=["red","orange","yellow","green","blue","indigo","violet"];
 const $=id=>document.getElementById(id);
-const show=id=>{ for(const s of ["start","plates","odd","gap","results"]) $(s).hidden=s!==id; window.scrollTo(0,0); };
-let plates=[], plateIdx=0, typed="", answers=[], testName="";
+const show=id=>{ for(const s of ["start","test","done"]) $(s).hidden=s!==id; window.scrollTo(0,0); };
+let name="", step=0, picks={};
 
-function buildPlates(){
-  const R=rng(Date.now()&0xffffffff);
-  const num=()=>{ let n; do n=12+Math.floor(R()*86); while(n%10===0||Math.floor(n/10)===n%10); return n; };
-  const rgAmt=[0.14,0.095,0.065], trAmt=[0.22,0.15,0.11], lv=["strong","medium","faint"];
-  const list=[];
-  for(const t of ["protan","deutan","tritan"]) for(let k=0;k<3;k++) list.push({type:t,level:lv[k],weight:3-k,amount:(t==="tritan"?trAmt:rgAmt)[k]});
-  for(let i=list.length-1;i>0;i--){ const j=Math.floor(R()*(i+1)); [list[i],list[j]]=[list[j],list[i]]; }
-  list.unshift({type:"control",level:"easy",weight:0,amount:0});
-  list.splice(6,0,{type:"control",level:"easy",weight:0,amount:0});
-  for(const p of list){ p.number=num(); p.seed=Math.floor(R()*4e9)+1; }
-  return list;
+function arc(i,R,r){ // one wheel part as an SVG path (part 0 centred at the top)
+  const a0=(-90-15+i*30)*Math.PI/180, a1=(-90+15+i*30)*Math.PI/180, g=0.012;
+  const p=(rad,a)=>(Math.cos(a)*rad).toFixed(2)+" "+(Math.sin(a)*rad).toFixed(2);
+  return "M"+p(R,a0+g)+" A"+R+" "+R+" 0 0 1 "+p(R,a1-g)+" L"+p(r,a1-g)+" A"+r+" "+r+" 0 0 0 "+p(r,a0+g)+" Z";
 }
-function showPlate(){
-  const p=plates[plateIdx]; typed="";
-  $("answer").textContent=""; $("plateOk").disabled=true;
-  $("plateCount").textContent=(plateIdx+1)+" of "+plates.length;
-  $("plateBar").style.width=(plateIdx/plates.length*100)+"%";
-  const cv=$("plateCanvas"); drawPlate(cv,p);
+function wheelSVG(selected,size){ // small read-only wheel for the summary
+  let s='<svg viewBox="-220 -220 440 440" width="'+size+'" height="'+size+'" aria-hidden="true">';
+  SEGS.forEach((c,i)=>{ const on=selected.includes(i); s+='<path d="'+arc(i,200,105)+'" fill="'+c[0]+'" opacity="'+(on?1:0.18)+'" stroke="'+(on?"#fff":"#2b2b2b")+'" stroke-width="'+(on?8:3)+'"/>'; });
+  return s+"</svg>";
 }
-function answerPlate(txt){
-  const p=plates[plateIdx]; answers.push({type:p.type,level:p.level,weight:p.weight,shown:p.number,said:txt,ok:parseInt(txt,10)===p.number});
-  plateIdx++;
-  if(plateIdx<plates.length) showPlate(); else startOdd();
+function buildWheel(){
+  const w=$("wheel"); w.innerHTML="";
+  SEGS.forEach((c,i)=>{
+    const p=document.createElementNS("http://www.w3.org/2000/svg","path");
+    p.setAttribute("d",arc(i,205,110)); p.setAttribute("fill",c[0]); p.dataset.i=i;
+    p.setAttribute("tabindex","0"); p.setAttribute("role","button"); p.setAttribute("aria-label","part "+(i+1));
+    const toggle=()=>{ const cur=picks[ASK[step]]||[]; picks[ASK[step]]=cur.includes(i)?cur.filter(x=>x!==i):cur.concat(i); drawStep(); };
+    p.addEventListener("click",toggle);
+    p.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); toggle(); } });
+    w.appendChild(p);
+  });
+  const mark=document.createElementNS("http://www.w3.org/2000/svg","g"); mark.id="marks"; w.appendChild(mark);
 }
+function drawStep(){
+  const sel=picks[ASK[step]]||[];
+  for(const p of $("wheel").querySelectorAll("path")) p.classList.toggle("on",sel.includes(+p.dataset.i));
+  // a check mark on each picked part
+  const g=$("marks"); g.innerHTML="";
+  for(const i of sel){ const a=(-90+i*30)*Math.PI/180; const t=document.createElementNS("http://www.w3.org/2000/svg","text");
+    t.setAttribute("x",(Math.cos(a)*157).toFixed(1)); t.setAttribute("y",(Math.sin(a)*157+11).toFixed(1)); t.setAttribute("text-anchor","middle"); t.textContent="✓"; g.appendChild(t); }
+  $("word").textContent=ASK[step];
+  $("stepText").textContent="Color "+(step+1)+" of "+ASK.length;
+  $("bar").style.width=(step/ASK.length*100)+"%";
+  $("count").textContent=sel.length?sel.length+" part"+(sel.length>1?"s":"")+" picked.":"Nothing picked yet.";
+  $("next").textContent=step===ASK.length-1?"Finish":"Next";
+  $("back").hidden=step===0;
+}
+function nextStep(){ if(step<ASK.length-1){ step++; drawStep(); } else finish(); }
 
 function finish(){
-  const plateRes={control:[],protan:[],deutan:[],tritan:[]}; let missRG=0, missTR=0, missRGstrong=false, missTRstrong=false, controlMiss=0;
-  for(const a of answers){ plateRes[a.type].push(a.ok);
-    if(a.ok) continue;
-    if(a.type==="control") controlMiss++;
-    else if(a.type==="tritan"){ missTR+=a.weight; if(a.level==="strong") missTRstrong=true; }
-    else { missRG+=a.weight; if(a.level==="strong") missRGstrong=true; } }
-  const cct=gapResult(), hues=oddResult();
-  const arrType="normal";
-  // gap test thresholds (u'v' x 10^-4). Normal on an ordinary screen: red-green under ~120, blue under ~200.
-  const RG_OK=120, TR_OK=200;
-  const tP=cct.protan.thr, tD=cct.deutan.thr, tT=cct.tritan.thr, tRG=Math.max(tP,tD);
-  const rgOut=tRG/RG_OK, trOut=tT/TR_OK;
-  let type="normal", severity="", why="";
-  const sevFrom=(x,mild,mod)=>x<=mild?"mild":x<=mod?"moderate":"strong";
-  if(controlMiss>=2){ type="unclear"; why="You missed the easy circles that everyone can read, so this result can't be trusted. Try again and type the number you see in each circle."; }
-  else if(trOut>1.3 && trOut>rgOut*1.2 && (missTR>=1 || arrType==="tritan" || trOut>2)){
-    type="tritan"; severity=cct.tritan.atMax?"strong":sevFrom(tT,400,800);
-    if(missTRstrong&&severity==="mild") severity="moderate";
-  } else if(rgOut>1.3 || missRG>=3 || arrType==="protan" || arrType==="deutan"){
-    // which kind: the gap test's two red-green lines, backed up by which colours came out weak
-    // (red-weak: red and teal-blue; green-weak: teal and pink-magenta)
-    const pw=k=>100-hues[k].pct;
-    const lean=(pw("red")+pw("orange"))-(pw("pink")+pw("teal"))*0.5;
-    type=tP>tD*1.2?"protan":tD>tP*1.2?"deutan":(lean>25?"protan":lean<-15?"deutan":"redgreen");
-    // strength comes from the gap test (the most precise part); missing strong circles can only raise it
-    severity=(cct.protan.atMax||cct.deutan.atMax)?"strong":sevFrom(tRG,300,550);
-    if(missRGstrong&&severity==="mild") severity="moderate";
-  } else if(missTR>=3){ type="tritan"; severity="mild"; }
-  const words={normal:"Normal color vision",protan:"Protan: red-weak",deutan:"Deutan: green-weak",tritan:"Tritan: blue-weak",redgreen:"Red-green colorblind",unclear:"Unclear result"};
-  const explain={
-    normal:"You found the hidden numbers and picked out faint colors like most people do. Your color vision looks normal.",
-    protan:"Your eyes pick up red light weakly. Reds look darker than they do to most people, and red, green, orange and brown can look alike.",
-    deutan:"Your eyes pick up green light weakly. This is the most common kind. Red, green, orange and brown can look alike, and so can blue and purple.",
-    tritan:"Your eyes pick up blue light weakly. This kind is rare. Blue and green can look alike, and so can yellow and pink.",
-    redgreen:"You're red-green colorblind, but the test couldn't tell clearly whether it's the red-weak or green-weak kind. Green-weak is far more common.",
-    unclear:why};
-  const sevWord={strong:"Strong",moderate:"Moderate",mild:"Mild"};
-  const summary=type==="normal"?"Normal":(sevWord[severity]?sevWord[severity]+" ":"")+words[type];
-  $("verdict").textContent=type==="normal"||type==="unclear"?words[type]:(sevWord[severity]+" "+words[type].charAt(0).toLowerCase()+words[type].slice(1));
-  $("explain").textContent=explain[type]+(severity==="mild"?" It's mild: most colors still look normal to you.":"");
-  const marks=arr=>arr.map(x=>'<span class="'+(x?"y":"n")+'">'+(x?"✓":"✗")+"</span>").join("");
-  // how strongly they see each colour
-  const weak=HUES.filter(h=>hues[h.key].cant||hues[h.key].pct<30).map(h=>h.name.toLowerCase());
-  $("colors").innerHTML='<p><b>How strongly you see each color</b> <span class="muted">(100% = like most people)</span></p><div class="bars">'+
-    HUES.map(h=>{ const r=hues[h.key]; return '<div class="bar"><span class="sw"><i style="background:rgb('+h.rgb.join(",")+')"></i>'+h.name+'</span><span class="track"><b style="width:'+(r.cant?0:r.pct)+'%"></b></span><span class="lab">'+(r.cant?"0%":r.pct+"%")+' &middot; '+hueWord(r)+'</span></div>'; }).join("")+'</div>'+
-    (weak.length?'<p class="muted">Colors that look washed-out or grey to you: '+weak.join(", ")+'. Pale or dark shades of these are the easiest to mix up.</p>':'');
-  $("detail").innerHTML=
-    "<tr><th>Easy circles</th><td class='marks'>"+marks(plateRes.control)+"</td></tr>"+
-    "<tr><th>Red-weak circles</th><td class='marks'>"+marks(plateRes.protan)+"</td></tr>"+
-    "<tr><th>Green-weak circles</th><td class='marks'>"+marks(plateRes.deutan)+"</td></tr>"+
-    "<tr><th>Blue-weak circles</th><td class='marks'>"+marks(plateRes.tritan)+"</td></tr>"+
-    "<tr><th>Gap test: red-weak line</th><td>"+gapWord(cct.protan,RG_OK)+"</td></tr>"+
-    "<tr><th>Gap test: green-weak line</th><td>"+gapWord(cct.deutan,RG_OK)+"</td></tr>"+
-    "<tr><th>Gap test: blue-weak line</th><td>"+gapWord(cct.tritan,TR_OK)+"</td></tr>";
-  const send={verdict:{type,severity,summary:summary+". Circles missed: red-green "+missRG+", blue "+missTR+", easy "+controlMiss+"."},
-    plates:plateRes, answers:answers.map(a=>[a.type[0],a.level[0],a.shown,a.said||"-"].join(":")),
-    hues, cct,
-    device:{w:screen.width,h:screen.height,dpr:+(window.devicePixelRatio||1).toFixed(2),ua:shortUA()}};
-  show("results");
-  submit(send);
+  const wheel={}; for(const c of ASK) wheel[c]=(picks[c]||[]).slice().sort((a,b)=>a-b);
+  $("minis").innerHTML=ASK.map(c=>'<div class="mini">'+wheelSVG(wheel[c],120)+'<b>'+c+'</b><span class="muted" style="font-size:14px">'+(wheel[c].length?wheel[c].length+" picked":"none")+'</span></div>').join("");
+  show("done");
+  submit({kind:"wheel",wheel,segments:SEGS.map(s=>s[0]),segmentNames:SEGS.map(s=>s[1]),
+    verdict:{type:"wheel",summary:ASK.map(c=>c+": "+(wheel[c].map(i=>SEGS[i][1]).join(", ")||"none")).join(" | ")},
+    device:{w:screen.width,h:screen.height,dpr:+(window.devicePixelRatio||1).toFixed(2),ua:shortUA()}});
 }
-function gapWord(g,ok){ const x=g.thr/ok; return (g.atMax?"couldn't see it even at full strength":x<=1?"normal":x<=2.5?"a bit weak":x<=4.5?"weak":"very weak")+" <span class='muted'>("+g.thr+")</span>"; }
 function shortUA(){ const u=navigator.userAgent; const os=/Windows/.test(u)?"Windows":/iPhone|iPad/.test(u)?"iOS":/Android/.test(u)?"Android":/Mac/.test(u)?"Mac":"other";
   const br=/Edg\//.test(u)?"Edge":/Chrome\//.test(u)?"Chrome":/Firefox\//.test(u)?"Firefox":/Safari\//.test(u)?"Safari":"browser"; return br+" on "+os; }
 
-// ======================= sending results =======================
-// The results go to the server on Archer's PC. Its address changes now and then, so it's read from
-// the Pack Rip site's server.json (through the GitHub API, never stale). ?server= overrides it.
+// ---- sending: to the server on Archer's PC (address read from the Pack Rip site's server.json) ----
 async function findServer(){
   const q=new URLSearchParams(location.search).get("server"); if(q) return q.replace(/\/$/,"");
   if(/github\.io$/.test(location.hostname)){
@@ -511,57 +166,33 @@ async function findServer(){
 }
 let lastSend=null;
 async function submit(data){
-  lastSend=data; const st=$("sendStatus"); st.textContent="Sending your results to Archer..."; $("copy").hidden=true;
+  lastSend=data; const st=$("sendStatus"); st.textContent="Sending your answers to Archer..."; $("copy").hidden=true;
   try{
     const srv=await findServer();
-    const r=await fetch(srv+"/cbtest/submit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name:testName,result:data})});
+    const r=await fetch(srv+"/cbtest/submit",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name,result:data})});
     if(!r.ok){ const j=await r.json().catch(()=>({})); throw new Error(j.error||("error "+r.status)); }
     st.textContent="✓ Sent to Archer.";
   }catch(e){
-    st.textContent="Couldn't reach Archer's results server right now (his PC may be off). Press Copy results and send them to him yourself.";
+    st.textContent="Couldn't reach Archer's results server right now (his PC may be off). Press Copy answers and send them to him yourself.";
     $("copy").hidden=false;
   }
 }
 $("copy").onclick=async()=>{
-  const t="Color Vision Check - "+testName+"\n"+lastSend.verdict.summary+"\nCircles: "+lastSend.answers.join(" ")+"\nColors: "+HUES.map(h=>h.name+" "+lastSend.hues[h.key].pct+"%").join(", ")+"\nGap test (x10^-4 u'v'): red "+lastSend.cct.protan.thr+", green "+lastSend.cct.deutan.thr+", blue "+lastSend.cct.tritan.thr;
+  const t="Color Vision Check - "+name+"\n"+lastSend.verdict.summary.split(" | ").join("\n");
   try{ await navigator.clipboard.writeText(t); $("copy").textContent="Copied"; }
-  catch(e){ const ta=document.createElement("textarea"); ta.value=t; ta.style.width="100%"; ta.rows=5; $("results").appendChild(ta); ta.select(); }
+  catch(e){ const ta=document.createElement("textarea"); ta.value=t; ta.rows=8; ta.style.width="100%"; $("done").appendChild(ta); ta.select(); }
 };
 
-// ======================= wiring =======================
-for(const k of ["1","2","3","4","5","6","7","8","9","⌫","0","Clear"]){
-  const b=document.createElement("button"); b.textContent=k; b.type="button";
-  b.onclick=()=>{ if(k==="⌫") typed=typed.slice(0,-1); else if(k==="Clear") typed=""; else if(typed.length<2) typed+=k;
-    $("answer").textContent=typed; $("plateOk").disabled=!typed; };
-  $("pad").appendChild(b);
-}
-document.addEventListener("keydown",e=>{
-  if($("plates").hidden) return;
-  if(/^[0-9]$/.test(e.key)&&typed.length<2){ typed+=e.key; }
-  else if(e.key==="Backspace"){ typed=typed.slice(0,-1); }
-  else if(e.key==="Enter"&&typed){ answerPlate(typed); return; }
-  else return;
-  $("answer").textContent=typed; $("plateOk").disabled=!typed;
-});
-$("plateOk").onclick=()=>{ if(typed) answerPlate(typed); };
-$("plateNone").onclick=()=>answerPlate("");
 $("go").onclick=()=>{
-  testName=$("name").value.trim();
-  if(!testName){ $("nameWarn").hidden=false; $("name").focus(); return; }
-  try{ localStorage.setItem("cvcName",testName); }catch(e){}
-  plates=buildPlates(); plateIdx=0; answers=[]; show("plates"); showPlate();
+  name=$("name").value.trim();
+  if(!name){ $("nameWarn").hidden=false; $("name").focus(); return; }
+  try{ localStorage.setItem("cvcName",name); }catch(e){}
+  step=0; picks={}; buildWheel(); drawStep(); show("test");
 };
-for(let i=0;i<4;i++) $("o"+i).onclick=()=>answerOdd(i);
-$("oNone").onclick=()=>answerOdd(-1);
-$("oddCanvas").onclick=e=>{ const b=e.target.getBoundingClientRect(), x=(e.clientX-b.left)/b.width, y=(e.clientY-b.top)/b.height; answerOdd((y>0.5?2:0)+(x>0.5?1:0)); };
-for(const [id,d] of [["gUp",0],["gRight",1],["gDown",2],["gLeft",3]]) $(id).onclick=()=>answerGap(d);
-$("gNone").onclick=()=>answerGap(-1);
-document.addEventListener("keydown",e=>{
-  if($("gap").hidden) return;
-  const m={ArrowUp:0,ArrowRight:1,ArrowDown:2,ArrowLeft:3}[e.key];
-  if(m!==undefined){ e.preventDefault(); answerGap(m); }
-});
-$("again").onclick=()=>{ show("start"); };
+$("next").onclick=nextStep;
+$("none").onclick=()=>{ picks[ASK[step]]=[]; nextStep(); };
+$("back").onclick=()=>{ if(step>0){ step--; drawStep(); } };
+$("again").onclick=()=>show("start");
 try{ const n=localStorage.getItem("cvcName"); if(n) $("name").value=n; }catch(e){}
 </script>
 </body>
