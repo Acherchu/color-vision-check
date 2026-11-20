@@ -156,9 +156,18 @@ function finish(){
   show("done");
   // sent compact - [r, g, b, what they typed, shade] - because the server takes at most 4 KB per test
   copyText=list.map(a=>a.rgb.join(",")+": "+a.said+", "+a.shade).join("\n");
-  submit({kind:"shades",a:list.map(a=>[a.rgb[0],a.rgb[1],a.rgb[2],a.said.slice(0,24),a.shade[0]]),
+  // each answer: [r, g, b, exactly what they typed, d/m/l, short code of the real colour] - the code tells Archer's results page
+  // which colour and which shade it really was (r3 = red shade 3 of 5, br2 = reddish brown 2, bn = one of Nogi's browns)
+  submit({kind:"shades",a:list.map(a=>[a.rgb[0],a.rgb[1],a.rgb[2],a.said,a.shade[0],code(a.id)]),
     verdict:{type:"shades"},
     device:{w:screen.width,h:screen.height,dpr:+(window.devicePixelRatio||1).toFixed(2),ua:shortUA()}});
+}
+const FAMCODE={red:"r",orange:"o",yellow:"y",green:"g",teal:"t",blue:"b",purple:"p",pink:"k",grey:"e"};
+function code(id){
+  let m=id.match(/^(\w+)-(\d)$/); if(m&&FAMCODE[m[1]]) return FAMCODE[m[1]]+m[2];
+  m=id.match(/^brown-(red|yellow)ish-(\d)$/); if(m) return (m[1]==="red"?"br":"by")+m[2];
+  const nogi=["brown-nogi-dull-light","brown-nogi-dull-dark","brown-nogi-strong","brown-nogi-redder","brown-nogi-dark-strong"].indexOf(id);
+  return nogi>=0?"bn"+(nogi+1):"";
 }
 function shortUA(){ const u=navigator.userAgent; const os=/Windows/.test(u)?"Windows":/iPhone|iPad/.test(u)?"iOS":/Android/.test(u)?"Android":/Mac/.test(u)?"Mac":"other";
   const br=/Edg\//.test(u)?"Edge":/Chrome\//.test(u)?"Chrome":/Firefox\//.test(u)?"Firefox":/Safari\//.test(u)?"Safari":"browser"; return br+" on "+os; }
